@@ -6,7 +6,7 @@ Added pool monitoring functionality
 
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge)](https://github.com/custom-components/hacs)
 
-# Binance
+# Binance Pool
 
 ### Installation with HACS
 ---
@@ -21,7 +21,7 @@ In order to use this integration, you need to first [Register an account with Bi
 To use this component in your installation, add the following to your `configuration.yaml` file:
 
 ```yaml
-binance:
+binance_pool:
   api_key: !secret binance_api_key
   api_secret: !secret binance_api_secret
 ```
