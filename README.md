@@ -98,42 +98,123 @@ A list of pool accounts can be specified here
 ---
 ![alt text](https://raw.githubusercontent.com/drinfernoo/homeassistant-binance/master/screenshots/example_card.png "Example Card")
 ```yaml
-type: vertical-stack
+type: custom:layout-card
+layout_type: vertical
 cards:
-  - type: entities
-    entities:
-      - entity: sensor.binance_vet_balance
-        type: 'custom:multiple-entity-row'
-        name: Cardano Balance
-        secondary_info:
-          attribute: native_balance
-      - entity: sensor.binance_doge_balance
-        type: 'custom:multiple-entity-row'
-        name: Dogecoin Balance
-        secondary_info:
-          attribute: native_balance
-  - type: horizontal-stack
+  - type: custom:vertical-stack-in-card
+    title: Wallet
     cards:
-      - type: 'custom:mini-graph-card'
+      - type: entities
         entities:
-          - entity: sensor.binance_vetusd_exchange
-            name: VET/USD
-        smoothing: false
-        decimals: 7
-        points_per_hour: 12
-        hours_to_show: 8
-        show:
-          fill: fade
-          extrema: true
-      - type: 'custom:mini-graph-card'
+          - entity: sensor.my_binance_btc_balance
+            name: BTC free
+          - entity: sensor.my_binance_btc_balance
+            name: BTC locked
+            type: attribute
+            attribute: locked
+          - type: divider
+          - entity: sensor.my_binance_usdt_balance
+            icon: mdi:currency-usd
+            name: USDT free
+          - entity: sensor.my_binance_usdt_balance
+            name: USDT locked
+            type: attribute
+            attribute: locked
+            icon: mdi:currency-usd
+  - type: custom:apexcharts-card
+    graph_span: 4d
+    header:
+      show: true
+      title: Exchange
+      standard_format: true
+      show_states: true
+    now:
+      show: true
+      label: Now
+    all_series_config:
+      curve: smooth
+      type: line
+      stroke_width: 1
+      show:
+        extremas: true
+    series:
+      - entity: sensor.my_binance_btcusdt_exchange
+  - type: custom:layout-break
+  - type: custom:vertical-stack-in-card
+    title: Pool
+    cards:
+      - type: entities
         entities:
-          - entity: sensor.binance_dogeusd_exchange
-            name: DOGE/USD
-        smoothing: false
-        decimals: 7
-        points_per_hour: 12
-        hours_to_show: 8
+          - entity: sensor.my_binance_account_sha256_status
+            name: Workers active
+            type: attribute
+            attribute: valid workers
+            icon: mdi:server-network
+          - entity: sensor.my_binance_account_sha256_status
+            name: Workers inactive
+            type: attribute
+            attribute: invalid workers
+            icon: mdi:server-network-off
+          - type: divider
+          - entity: sensor.my_binance_account_sha256_btc_profit
+            name: Yesterday earnings
+            type: attribute
+            attribute: yesterday's earnings
+            icon: mdi:currency-btc
+            suffix: BTC
+          - entity: sensor.my_binance_account_sha256_btc_profit
+            name: Estimated profit
+            type: attribute
+            attribute: estimated profit
+            icon: mdi:currency-btc
+            suffix: BTC
+  - type: custom:apexcharts-card
+    graph_span: 1d
+    header:
+      show: true
+      title: Workers
+      standard_format: true
+      show_states: true
+    now:
+      show: true
+      label: Now
+    all_series_config:
+      curve: smooth
+      type: line
+      stroke_width: 1
+      fill_raw: zero
+      show:
+        in_header: false
+        extremas: false
+    series:
+      - entity: sensor.my_binance_account_002_sha256_worker
+        name: '002'
+      - entity: sensor.my_binance_account_003_sha256_worker
+        name: '003'
+      - entity: sensor.my_binance_account_005_sha256_worker
+        name: '005'
+      - entity: sensor.my_binance_account_006_sha256_worker
+        name: '006'
+      - entity: sensor.my_binance_account_007_sha256_worker
+        name: '007'
+      - entity: sensor.my_binance_account_10x5x18x7_sha256_worker
+        name: 10x5x18x7
+      - entity: sensor.my_binance_account_10x5x18x8_sha256_worker
+        name: 10x5x18x8
+      - entity: sensor.my_binance_account_sha256_status
+        name: 15 min average
+        attribute: average hashrate (15 mins)
+        transform: return x / 10**12
+        unit: TH/s
         show:
-          fill: fade
-          extrema: true
+          in_header: true
+          in_chart: false
+      - entity: sensor.my_binance_account_sha256_status
+        name: 24 hour average
+        attribute: average hashrate (24 hours
+        transform: return x / 10**12
+        unit: TH/s
+        show:
+          in_header: true
+          in_chart: false
 ```
