@@ -1,6 +1,6 @@
 # homeassistant-binance-pool
 
-Project based on https://github.com/drinfernoo/homeassistant-binance
+Project originally was forked from https://github.com/drinfernoo/homeassistant-binance
 
 Added pool monitoring functionality
 
