@@ -96,7 +96,7 @@ A list of pool accounts can be specified here
 
 ### Example Lovelace card
 ---
-![alt text](https://raw.githubusercontent.com/shammysha/homeassistant-binance-pool/master/card.png "Example Card")
+![alt text](https://raw.githubusercontent.com/shammysha/homeassistant-binance-pool/main/card.png "Example Card")
 ```yaml
 type: custom:layout-card
 layout_type: vertical
