@@ -7,4 +7,5 @@
     "iot_class": "Cloud Polling",
     "render_readme": true,
     "homeassistant": "2021.4.0"
+    "version": "1.0.0"
 }
