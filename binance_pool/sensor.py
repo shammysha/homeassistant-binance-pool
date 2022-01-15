@@ -329,7 +329,7 @@ class BinanceWorkerSensor(SensorEntity):
                     self._reject = worker["rejectRate"]
                     self._update = worker["lastShareTime"]
 
-                    self._state = float("{:.2f}".format(float(worker["hashRate") / 10 ** 12)
+                    self._state = float("{:.2f}".format(float(worker["hashRate"]) / 10 ** 12))
     
                     break                
                 if exists:
@@ -414,8 +414,7 @@ class BinanceStatusSensor(SensorEntity):
                 self._valid_workers = type["status"]["validNum"]
                 self._invalid_workers = type["status"]["invalidNum"]
                 
-                self._state = float("{:.2f}".format(float(self._hrate15)) / 10 ** 12)
-                    
+                self._state = float("{:.2f}".format(float(self._hrate15m) / 10 ** 12))
 
                 break
             

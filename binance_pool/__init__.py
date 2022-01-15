@@ -111,13 +111,9 @@ def setup(hass, config):
                     if "dayHashRate" not in status:
                         status["dayHashRate"] = 0                    
 
-                    _LOGGER.debug(f"status pre: {status}")
-                    
                     profit_today = status.pop("profitToday", {})
                     profit_yesterday = status.pop("profitYesterday", {})
                     
-                    _LOGGER.debug(f"status post: {status}")
-                                        
                     load_platform(hass, "sensor", DOMAIN, status, config)
                     
                     for coindata in binance_data.coins:
