@@ -8,22 +8,24 @@ from homeassistant.components.sensor import SensorEntity
 
 CURRENCY_ICONS = {
     "BTC": "mdi:currency-btc",
+    "BSV": "mdi:bitcoin",
+    "BCH": "mdi:bitcoin",    
     "ETH": "mdi:currency-eth",
     "EUR": "mdi:currency-eur",
     "LTC": "mdi:litecoin",
     "USD": "mdi:currency-usd",
     "USDT": "mdi:currency-usd",
-    "USDT": "mdi:currency-usd",
     "RUB": "mdi:currency-rub"
 }
 
-QUOTE_ASSETS = ["USD", "BTC", "USDT", "BUSD", "USDC"]
+QUOTE_ASSETS = ["USD", "BTC", "USDT", "BUSD", "USDC", "RUB"]
 
 DEFAULT_COIN_ICON = "mdi:currency-usd-circle"
 
 ATTRIBUTION = "Data provided by Binance"
 ATTR_FREE = "free"
 ATTR_LOCKED = "locked"
+ATTR_TOTAL = "total"
 ATTR_NATIVE_BALANCE = "native_balance"
 
 ATTR_WORKER_STATUS = "status"
@@ -32,19 +34,20 @@ ATTR_WORKER_HRATE_DAILY = "daily_hashrate"
 ATTR_WORKER_REJECT = "reject_rate"
 ATTR_WORKER_WORKER = "worker_name"
 ATTR_WORKER_UPDATE = "updated"
-ATTR_ACCOUNT = "account"
-ATTR_ALGO = "algorithm"
 
 ATTR_STATUS_HRATE15M = "average hashrate (15 mins)"
-ATTR_STATUS_HRATE24H = "average hashrate (24 hours"
+ATTR_STATUS_HRATE24H = "average hashrate (24 hours)"
 ATTR_STATUS_VALID_WORKERS = "valid workers"
 ATTR_STATUS_INVALID_WORKERS = "invalid workers"
 
 ATTR_PROFIT_ESTIMATE = "estimated profit"
 ATTR_PROFIT_EARNINGS = "yesterday's earnings"
 
-DATA_BINANCE = "binance_cache"
+ATTR_ACCOUNT = "account"
+ATTR_ALGO = "algorithm"
+ATTR_COIN = "coin"
 
+DATA_BINANCE = "binance_pool_cache"
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     """Setup the Binance sensors."""
@@ -68,6 +71,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
         sensor = BinanceExchangeSensor(hass.data[DATA_BINANCE], name, symbol, price)
 
+
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "workerName", "status", "hashRate", "dayHashRate", "rejectRate", "lastShareTime"]):
         name = discovery_info["name"]
         account = discovery_info["account"]
@@ -79,9 +83,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         reject = discovery_info["rejectRate"]
         update = discovery_info["lastShareTime"]
 
-        sensor = BinanceWorkerSensor(hass.data[DATA_BINANCE], account, algorithm, worker, status, hrate, hrate_daily, reject, update)
+        sensor = BinanceWorkerSensor(hass.data[DATA_BINANCE], name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
 
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "fifteenMinHashRate", "dayHashRate", "validNum", "invalidNum"]):
+        name = discovery_info["name"]
         account = discovery_info["account"]
         algorithm = discovery_info["algorithm"]
         hrate_15min = discovery_info["fifteenMinHashRate"]
@@ -89,21 +94,21 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         validNum = discovery_info["validNum"]
         invalidNum = discovery_info["invalidNum"]
 
-        sensor = BinanceStatusSensor(hass.data[DATA_BINANCE], account, algorithm, hrate_15min, hrate_day, validNum, invalidNum)
+        sensor = BinanceStatusSensor(hass.data[DATA_BINANCE], name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum)
         
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday"]):
+        name = discovery_info["name"]
         account = discovery_info["account"]
         algorithm = discovery_info["algorithm"]
         coin = discovery_info["coin"]
         estimate = discovery_info["profitToday"]
         earnings = discovery_info["profitYesterday"]
-
-        sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], account, algorithm, coin, estimate, earnings)        
+        
+        sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], name, account, algorithm, coin, estimate, earnings)        
 
     add_entities([sensor], True)
 
-
-class BinanceSensor(SensorEntity):
+class BinanceSensor(SensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, binance_data, name, asset, free, locked, native):
@@ -138,17 +143,20 @@ class BinanceSensor(SensorEntity):
     def icon(self):
         """Icon to use in the frontend, if any."""
 
-        return CURRENCY_ICONS.get(self._asset, "mdi:currency-" + self._asset.lower()))
+        return CURRENCY_ICONS.get(self._asset, "mdi:currency-" + self._asset.lower())
 
     @property
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
 
+        total = float(self._free) + float(self._locked)
+        
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
             ATTR_NATIVE_BALANCE: f"{self._native_balance} {self._native}",
             ATTR_FREE: f"{self._free} {self._unit_of_measurement}",
             ATTR_LOCKED: f"{self._locked} {self._unit_of_measurement}",
+            ATTR_TOTAL: f"{total} {self._unit_of_measurement}",
         }
 
     def update(self):
@@ -202,7 +210,7 @@ class BinanceExchangeSensor(SensorEntity):
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return CURRENCY_ICONS.get(self._symbol, "mdi:currency-" + self._symbol.lower()))
+        return CURRENCY_ICONS.get(self._symbol, "mdi:currency-" + self._symbol.lower())
 
     @property
     def extra_state_attributes(self):
@@ -224,14 +232,15 @@ class BinanceExchangeSensor(SensorEntity):
                     self._unit_of_measurement = ticker["symbol"][-3:]
                 break
 
-                
+   
+             
 class BinanceWorkerSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, account, algorithm, worker, status, hrate, hrate_daily, reject, update):
+    def __init__(self, binance_data, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update):
         """Initialize the sensor."""
         self._binance_data = binance_data
-        self._name = f"{name} {account} ({algorithm}) worker {worker}"
+        self._name = f"{name} {account}.{worker} ({algorithm}) worker"
         self._account = account
         self._algorithm = algorithm
         self._worker = worker
@@ -239,8 +248,8 @@ class BinanceWorkerSensor(SensorEntity):
         self._hrate = hrate
         self._hrate_daily = hrate_daily
         self._reject = reject
-        self._update = int(update / 1000)
-        self._unit_of_measurement = None        
+        self._update = update
+        self._unit_of_measurement = 'TH/s'        
         self._state = None
         
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
@@ -277,14 +286,13 @@ class BinanceWorkerSensor(SensorEntity):
 
         data = {
             ATTR_ATTRIBUTION: ATTRIBUTION,
-            ATTR_WORKER_HRATE: "{self._hrate}",
-            ATTR_WORKER_HRATE_DAILY = "{self._hrate_daily}",
-            ATTR_WORKER_UPDATE = fromtimestamp
-            ATTR_WORKER_REJECT = "{self._reject}",
-            ATTR_WORKER_WORKER = "{self._worker}",
-            ATTR_WORKER_UPDATE = datetime.fromtimestamp(self._update / 10000).strftime("%Y-%m-%d %H:%M:%S")
-            ATTR_ACCOUNT = "{self._account}",
-            ATTR_ALGO = "{self._algorithm}",
+            ATTR_WORKER_HRATE: f"{self._hrate}",
+            ATTR_WORKER_HRATE_DAILY: f"{self._hrate_daily}",
+            ATTR_WORKER_REJECT: f"{self._reject}",
+            ATTR_WORKER_WORKER: f"{self._worker}",
+            ATTR_WORKER_UPDATE: datetime.fromtimestamp(self._update / 1000).strftime("%Y-%m-%d %H:%M:%S"),
+            ATTR_ACCOUNT: f"{self._account}",
+            ATTR_ALGO: f"{self._algorithm}",
         }
         
         try:
@@ -306,7 +314,7 @@ class BinanceWorkerSensor(SensorEntity):
                 continue
                 
             for algo, type in algos.items():
-                if algo != self._algorithm or type != "workers":
+                if algo != self._algorithm or "workers" not in type:
                     continue
                 
                 for worker in type["workers"]:
@@ -315,10 +323,7 @@ class BinanceWorkerSensor(SensorEntity):
                     
                     exists = True
                         
-                    if worker["status"] == 1:
-                        self._state = "On"
-                    else:
-                        self._state = "Off"
+                    self._state = float("{:.2f}".formatfloat((worker["hashRate")) / 10 ** 12))
                         
                     self._status = worker["status"]
                     self._hrate = worker["hashRate"]
@@ -339,10 +344,10 @@ class BinanceWorkerSensor(SensorEntity):
 class BinanceStatusSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum):
+    def __init__(self, binance_data, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum):
         """Initialize the sensor."""
         self._binance_data = binance_data
-        self._name = f"{name} {account} ({algorithm}) mining status"
+        self._name = f"{name} {account} ({algorithm}) status"
         self._account = account
         self._algorithm = algorithm
         self._hrate15m = hrate_15min
@@ -379,12 +384,12 @@ class BinanceStatusSensor(SensorEntity):
 
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
-            ATTR_STATUS_HRATE15M: "{self._hrate15m}",
-            ATTR_STATUS_HRATE24H: "{self._hrate24h}",
-            ATTR_STATUS_VALID_WORKERS: "{self._valid_workers}",
-            ATTR_STATUS_INVALID_WORKERS: "{self._invalid_workers}",    
-            ATTR_ACCOUNT = "{self._account}",
-            ATTR_ALGO = "{self._algorithm}",
+            ATTR_STATUS_HRATE15M: f"{self._hrate15m}",
+            ATTR_STATUS_HRATE24H: f"{self._hrate24h}",
+            ATTR_STATUS_VALID_WORKERS: f"{self._valid_workers}",
+            ATTR_STATUS_INVALID_WORKERS: f"{self._invalid_workers}",    
+            ATTR_ACCOUNT: f"{self._account}",
+            ATTR_ALGO: f"{self._algorithm}",
         }
         
         
@@ -399,16 +404,17 @@ class BinanceStatusSensor(SensorEntity):
                 continue
                 
             for algo, type in algos.items():
-                if algo != self._algorithm or type != "status":
+                if algo != self._algorithm or "status" not in type:
                     continue
                 
                 exists = True
                 
-                self._hrate15m = type["fifteenMinHashRate"]
-                self._hrate24h = type["dayHashRate"]
-                self._valid_workers = type["validNum"]
-                self._invalid_workers = type["invalidNum"]
-                self._state = self._valid_workers
+                self._hrate15m = type["status"].get("fifteenMinHashRate", 0)
+                self._hrate24h = type["status"].get("dayHashRate", 0)
+                self._valid_workers = type["status"]["validNum"]
+                self._invalid_workers = type["status"]["invalidNum"]
+                
+                self._state = float("{:.2f}".format(float(self._hrate15)) / 10 ** 12))
                     
 
                 break
@@ -422,16 +428,16 @@ class BinanceStatusSensor(SensorEntity):
 class BinanceProfitSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, account, algorithm, coin, estimate, earnings):
+    def __init__(self, binance_data, name, account, algorithm, coin, estimate, earnings):
         """Initialize the sensor."""
         self._binance_data = binance_data
-        self._name = f"{name} {account} ({algorithm}) mining profit ({coin})"
+        self._name = f"{name} {account} ({algorithm}) {coin} profit"
         self._account = account
         self._algorithm = algorithm
         self._coin = coin
         self._estimate = estimate
         self._earnings = earnings
-        self._unit_of_measurement = None        
+        self._unit_of_measurement = f"{coin}"        
         self._state = None
         
     @property
@@ -453,26 +459,20 @@ class BinanceProfitSensor(SensorEntity):
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return CURRENCY_ICONS.get(self._asset, "mdi:currency-" + self._asset.lower()))
+        return CURRENCY_ICONS.get(self._coin, "mdi:currency-" + self._coin.lower())
 
     @property
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
 
-        data = {
+        return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
-            ATTR_PROFIT_ESTIMATE: "{self._estimate}",
-            ATTR_PROFIT_EARNINGS: "{self._earnings}",
-            ATTR_ACCOUNT = "{self._account}",
-            ATTR_ALGO = "{self._algorithm}",
+            ATTR_PROFIT_ESTIMATE: f"{self._estimate}",
+            ATTR_PROFIT_EARNINGS: f"{self._earnings}",
+            ATTR_COIN: f"{self._coin}",
+            ATTR_ACCOUNT: f"{self._account}",
+            ATTR_ALGO: f"{self._algorithm}",
         }
-        
-        try:
-            data[ATTR_WORKER_STATUS] = self._status_vars[self._status]
-        except KeyError as e:
-            data[ATTR_WORKER_STATUS] = "unknown"
-        
-        return data
         
         
     def update(self):
@@ -486,17 +486,17 @@ class BinanceProfitSensor(SensorEntity):
                 continue
                 
             for algo, type in algos.items():
-                if algo != self._algorithm or type != "status":
+                if algo != self._algorithm or "status" not in type:
                     continue
                 
-                estimate = type["status"].get("profitToday", {})
-                earnings = type["status"].get("profitYesterday", {})
-                 
-                coins = estimate.keys() | earnings.keys()               
-                
-                for coin in coins:
+                for coindata in self._binance_data.coins:
+                    coin = coindata["coinName"]
+                    
                     if coin != self._coin:
                         continue
+
+                    estimate = type["status"].get("profitToday", {})
+                    earnings = type["status"].get("profitYesterday", {})
                         
                     exists = True
                                             
@@ -507,8 +507,10 @@ class BinanceProfitSensor(SensorEntity):
                     
                     if coin in earnings:
                         self._earnings = earnings[coin]
+                        self._state = earnings[coin]
                     else:
                         self._earnings = 0.00
+                        self._state = 0.00
 
                     break   
                 
