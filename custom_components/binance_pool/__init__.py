@@ -27,7 +27,7 @@ CONF_NATIVE_CURRENCY = "native_currency"
 
 SCAN_INTERVAL = timedelta(minutes=1)
 MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=1)
-MIN_TIME_BETWEEN_MINING_UPDATES = timedelta(minutes=15)
+MIN_TIME_BETWEEN_MINING_UPDATES = timedelta(minutes=5)
 
 DATA_BINANCE = "binance_pool_cache"
 
@@ -111,35 +111,38 @@ def setup(hass, config):
                     if "dayHashRate" not in status:
                         status["dayHashRate"] = 0                    
 
-                    profit_today = status.pop("profitToday", {})
-                    profit_yesterday = status.pop("profitYesterday", {})
-                    
-                    load_platform(hass, "sensor", DOMAIN, status, config)
-                    
                     for coindata in binance_data.coins:
                         if coindata["algoName"].lower() != algo:
                             continue
 
+                        coin = coindata["coinName"]
+                        
+                        estimate = status.get("profitToday", {})
+                        earnings = status.get("profitYesterday", {})
+                        
                         profit = {
                             "name": name, 
                             "algorithm": algo,
                             "account": account
+                            "coin": coin
                         }
                         
-                        profit["coin"] = coin = coindata["coinName"]
-                        
-                        if coin in profit_today:
-                            profit["profitToday"] = profit_today[coin]
+                        if coin in estimate:
+                            profit["profitToday"] = estimate[coin]
                         else:
                             profit["profitToday"] = 0
                         
-                        if coin in profit_yesterday:
-                            profit["profitYesterday"] = profit_yesterday[coin]
+                        if coin in earnings:
+                            profit["profitYesterday"] = earnings[coin]
                         else:
                             profit["profitYesterday"] = 0
                             
                         load_platform(hass, "sensor", DOMAIN, profit, config)                        
                     
+                    status.pop("profitToday", None)
+                    status.pop("profitYesterday", None)
+                    
+                    load_platform(hass, "sensor", DOMAIN, status, config)                                        
     return True
 
 

@@ -149,7 +149,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
 
-        total = float(self._free) + float(self._locked)
+        total = "{:.8f}".format(float(self._free) + float(self._locked))
         
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
