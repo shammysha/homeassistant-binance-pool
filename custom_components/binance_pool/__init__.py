@@ -123,7 +123,7 @@ def setup(hass, config):
                         profit = {
                             "name": name, 
                             "algorithm": algo,
-                            "account": account
+                            "account": account,
                             "coin": coin
                         }
                         
