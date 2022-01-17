@@ -157,15 +157,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
         data = {
             ATTR_ATTRIBUTION: ATTRIBUTION,
-            ATTR_FREE: "{:.8f}".format(float(self._free)) + f" {self._unit_of_measurement}",
-            ATTR_LOCKED: "{:.8f}".format(float(self._locked)) + f" {self._unit_of_measurement}",
-            ATTR_FREEZE: "{:.8f}".format(float(self._freeze)) + f" {self._unit_of_measurement}",            
-            ATTR_TOTAL: "{:.8f}".format(float(self._total)) + f" {self._unit_of_measurement}",
+            ATTR_FREE: "{:.8f}".format(float(self._free)),
+            ATTR_LOCKED: "{:.8f}".format(float(self._locked)),
+            ATTR_FREEZE: "{:.8f}".format(float(self._freeze)),            
+            ATTR_TOTAL: "{:.8f}".format(float(self._total)),
         }
         
         for type, native in self._native_balance.items():
             for asset, exchange in native.items(): 
-                data[f"Native {type} balance in {asset}"] = "{:.8f}".format(exchange) + f" {asset}"
+                data[f"Native {type} balance in {asset}"] = exchange
          
         return data
 
@@ -186,18 +186,18 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                         for ticker in self._binance_data.tickers:
                     
                             if ticker["symbol"] == self._coin + native.upper():
-                                self._native_balance["total"][native] = float(ticker["price"]) * float(self._total)
-                                self._native_balance["free"][native] = float(ticker["price"]) * float(self._free)
-                                self._native_balance["locked"][native] = float(ticker["price"]) * float(self._free)
-                                self._native_balance["freeze"][native] = float(ticker["price"]) * float(self._freeze)
+                                self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
+                                self._native_balance["free"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                                self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                                self._native_balance["freeze"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._freeze))
                             
                                 break
                             
                             if ticker["symbol"] == native.upper() + self._coin:      
-                                self._native_balance["total"][native] = float(self._total) / float(ticker["price"])
-                                self._native_balance["free"][native] = float(self._free) / float(ticker["price"])
-                                self._native_balance["locked"][native] = float(self._locked) / float(ticker["price"])
-                                self._native_balance["freeze"][native] = float(self._freeze) / float(ticker["price"])                                                  
+                                self._native_balance["total"][native] = "{:.8f}".format(float(self._total) / float(ticker["price"]))
+                                self._native_balance["free"][native] = "{:.8f}".format(float(self._free) / float(ticker["price"]))
+                                self._native_balance["locked"][native] = "{:.8f}".format(float(self._locked) / float(ticker["price"]))
+                                self._native_balance["freeze"][native] = "{:.8f}".format(float(self._freeze) / float(ticker["price"]))                                               
                             
                                 break
                 break
