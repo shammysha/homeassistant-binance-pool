@@ -1,7 +1,7 @@
 from datetime import timedelta
 import logging
 
-from binance.client import Client
+from binance.client import Client, MARGIN_API_URL
 from binance.exceptions import BinanceAPIException, BinanceRequestException
 import voluptuous as vol
 
