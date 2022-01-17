@@ -127,7 +127,8 @@ def setup(hass, config):
                             "name": name, 
                             "algorithm": algo,
                             "account": account,
-                            "coin": coin
+                            "coin": coin,
+                            "native": native_currency,
                         }
                         
                         if coin in estimate:

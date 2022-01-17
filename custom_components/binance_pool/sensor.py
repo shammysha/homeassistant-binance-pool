@@ -100,15 +100,16 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
         sensor = BinanceStatusSensor(hass.data[DATA_BINANCE], name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum)
         
-    elif all(i in discovery_info for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday"]):
+    elif all(i in discovery_info for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday", "native"]):
         name = discovery_info["name"]
         account = discovery_info["account"]
         algorithm = discovery_info["algorithm"]
         coin = discovery_info["coin"]
         estimate = discovery_info["profitToday"]
         earnings = discovery_info["profitYesterday"]
+        native = discovery_info["native"]
         
-        sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], name, account, algorithm, coin, estimate, earnings)        
+        sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], name, account, algorithm, coin, estimate, earnings, native)        
 
     add_entities([sensor], True)
 
@@ -450,7 +451,7 @@ class BinanceStatusSensor(SensorEntity):
 class BinanceProfitSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, account, algorithm, coin, estimate, earnings):
+    def __init__(self, binance_data, name, account, algorithm, coin, estimate, earnings, native = []):
         """Initialize the sensor."""
         self._binance_data = binance_data
         self._name = f"{name} {account} ({algorithm}) {coin} profit"
@@ -461,6 +462,9 @@ class BinanceProfitSensor(SensorEntity):
         self._earnings = earnings
         self._unit_of_measurement = f"{coin}"        
         self._state = None
+        self._native = native
+        self._native_earnings = {}
+        self._native_estimate = {}
         
     @property
     def name(self):
@@ -487,7 +491,7 @@ class BinanceProfitSensor(SensorEntity):
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
 
-        return {
+        data = {
             ATTR_ATTRIBUTION: ATTRIBUTION,
             ATTR_PROFIT_ESTIMATE: f"{self._estimate}",
             ATTR_PROFIT_EARNINGS: f"{self._earnings}",
@@ -495,6 +499,16 @@ class BinanceProfitSensor(SensorEntity):
             ATTR_ACCOUNT: f"{self._account}",
             ATTR_ALGO: f"{self._algorithm}",
         }
+        
+        if self._native_earnings:
+            for asset, exchange in self._native_earnings.items():
+                data[f"Native earnings in {asset}"] = exchange        
+                
+        if self._native_estimate:                
+            for asset, exchange in self._native_estimate.items():
+                data[f"Native estimate in {asset}"] = exchange            
+        
+        return data
         
         
     def update(self):
@@ -524,15 +538,43 @@ class BinanceProfitSensor(SensorEntity):
                                             
                     if coin in estimate:
                         self._estimate = estimate[coin]
+                            
                     else:
                         self._estimate = 0.00
+
+                    if self._native:
+                        for native in self._native: 
+                            for ticker in self._binance_data.tickers:
+                                if ticker["symbol"] == self._coin + native.upper():
+                                    self._native_estimate[native] = "{:.8f}".format(float(ticker["price"]) * float(self._estimate))
+                            
+                                    break
+                                
+                                if ticker["symbol"] == native.upper() + self._coin:      
+                                    self._native_estimate[native] = "{:.8f}".format(float(self._estimate) / float(ticker["price"]))
+                            
+                                    break 
                     
                     if coin in earnings:
                         self._earnings = earnings[coin]
                         self._state = earnings[coin]
+                          
                     else:
                         self._earnings = 0.00
                         self._state = 0.00
+
+                    if self._native:
+                          for native in self._native: 
+                              for ticker in self._binance_data.tickers:
+                                  if ticker["symbol"] == self._coin + native.upper():
+                                      self._native_earnings[native] = "{:.8f}".format(float(ticker["price"]) * float(self._estimate))
+                              
+                                      break
+                                  
+                                  if ticker["symbol"] == native.upper() + self._coin:      
+                                      self._native_earnings[native] = "{:.8f}".format(float(self._estimate) / float(ticker["price"]))
+                              
+                                      break 
 
                     break   
                 
