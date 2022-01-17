@@ -74,9 +74,9 @@ def setup(hass, config):
         pass
     else:
         for balance in binance_data.balances:
-            if not balances or balance["asset"] in balances:
+            if not balances or balance["coin"] in balances:
                 balance["name"] = name
-                balance["native"] = native_currency
+                balance.pop("networkList", None)
                 load_platform(hass, "sensor", DOMAIN, balance, config)
 
     if not hasattr(binance_data, "tickers"):
@@ -149,7 +149,7 @@ def setup(hass, config):
 class BinanceData:
     def __init__(self, api_key, api_secret, tld, miners = []):
         """Initialize."""
-        self.client = MiningClient(api_key, api_secret, tld=tld)
+        self.client = BinancePoolClient(api_key, api_secret, tld=tld)
         self.coins = {}
         self.balances = []
         self.tickers = {}
@@ -170,8 +170,7 @@ class BinanceData:
     def update(self):
         _LOGGER.debug(f"Fetching data from binance.{self.tld}")
         try:
-            account_info = self.client.get_account()
-            balances = account_info.get("balances", [])
+            balances = self.get_capital_balances()
             if balances:
                 self.balances = balances
                 _LOGGER.debug(f"Balances updated from binance.{self.tld}")
@@ -220,15 +219,13 @@ class BinanceData:
             _LOGGER.error(f"Error fetching mining data from binance.{self.tld}: {e.message}")
             return False                                       
             
-            
-class MiningClient(Client):
-    MINING_API_URL = 'https://api.binance.{}/sapi'
-    MINING_API_VERSION = 'v1'
+class BinancePoolClient(Client):
+    
+    def _create_mining_api_url(self, path: str, version: str = MARGIN_API_URL ) -> str:
+        return self.MARGIN_API_URL.format(self.tld) + '/' + self.MARGIN_API_VERSION + '/mining/' + path        
 
-       
-    def _create_mining_api_url(self, path: str, version: str = MINING_API_VERSION) -> str:
-        return self.MINING_API_URL.format(self.tld) + '/' + self.MINING_API_VERSION + '/mining/' + path        
-
+    def _create_capital_api_url(self, path: str, version: str = MARGIN_API_URL ) -> str:
+        return self.MARGIN_API_URL.format(self.tld) + '/' + self.MARGIN_API_VERSION + '/capital/' + path
       
     def _request_mining_api(self, method, path, signed=False, **kwargs):
         uri = self._create_mining_api_url(path)
@@ -241,6 +238,10 @@ class MiningClient(Client):
              
         return answer["data"]
 
+    def _request_capital_api(self, method, path, signed=False, **kwargs):
+        uri = self._create_capital_api_url(path)
+        
+        return self._request(method, uri, signed, True, **kwargs)
         
     def get_mining_algolist(self):
         """ Acquiring Algorithm (MARKET_DATA)
@@ -305,3 +306,10 @@ class MiningClient(Client):
             https://binance-docs.github.io/apidocs/spot/en/#account-list-user_data
         """
         return self._request_mining_api('get', 'statistics/user/list', True, data=params)           
+
+    def get_capital_balances(self, **params):
+        """ All Coins' Information (USER_DATA)
+
+            https://binance-docs.github.io/apidocs/spot/en/#all-coins-39-information-user_data
+        """
+        return self._request_capital_api('get', 'config/getall', True, data=params) 

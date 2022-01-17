@@ -54,16 +54,18 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
     if discovery_info is None:
         return
-    if all(i in discovery_info for i in ["name", "asset", "free", "locked", "native"]):
+    
+    elif all(i in discovery_info for i in ["name", "coin", "free", "locked", "freeze"]):
         name = discovery_info["name"]
-        asset = discovery_info["asset"]
+        coin = discovery_info["coin"]
         free = discovery_info["free"]
         locked = discovery_info["locked"]
-        native = discovery_info["native"]
+        freeze = discovery_info["freeze"]
 
         sensor = BinanceSensor(
-            hass.data[DATA_BINANCE], name, asset, free, locked, native
+            hass.data[DATA_BINANCE], name, coin, free, locked, freeze
         )
+
     elif all(i in discovery_info for i in ["name", "symbol", "price"]):
         name = discovery_info["name"]
         symbol = discovery_info["symbol"]
@@ -111,15 +113,15 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class BinanceSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, asset, free, locked, native):
+    def __init__(self, binance_data, name, coin, free, locked, freeze):
         """Initialize the sensor."""
         self._binance_data = binance_data
-        self._name = f"{name} {asset} Balance"
-        self._asset = asset
+        self._name = f"{name} {coin} Balance"
+        self._coin = coin
         self._free = free
         self._locked = locked
-        self._native = native
-        self._unit_of_measurement = asset
+        self._freeze = freeze
+        self._unit_of_measurement = coin
         self._state = None
         self._native_balance = None
 
@@ -149,7 +151,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
 
-        total = "{:.8f}".format(float(self._free) + float(self._locked))
+        total = "{:.8f}".format(float(self._free) + float(self._locked) + float(self._freeze))
         
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
@@ -163,13 +165,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         """Update current values."""
         self._binance_data.update()
         for balance in self._binance_data.balances:
-            if balance["asset"] == self._asset:
+            if balance["coin"] == self._coin:
                 self._state = balance["free"]
                 self._free = balance["free"]
                 self._locked = balance["locked"]
+                self._freeze = balance["freeze"]
 
-                if balance["asset"] == self._native:
-                    self._native_balance = round(float(balance["free"]), 2)
                 break
 
         for ticker in self._binance_data.tickers:
