@@ -1,7 +1,7 @@
 from datetime import timedelta
 import logging
 
-from binance.client import Client, MARGIN_API_URL
+from binance.client import Client
 from binance.exceptions import BinanceAPIException, BinanceRequestException
 import voluptuous as vol
 
@@ -220,12 +220,16 @@ class BinanceData:
             return False                                       
             
 class BinancePoolClient(Client):
+    MINING_API_URL = 'https://api.binance.{}/sapi'
+    BALANCES_API_URL = 'https://api.binance.{}/sapi'
+    MINING_API_VERSION = 'v1'
+    BALANCES_API_VERSION = 'v1'
+    
+    def _create_mining_api_url(self, path: str, version: str = MINING_API_URL ) -> str:
+        return self.MINING_API_URL.format(self.tld) + '/' + self.MINING_API_VERSION + '/mining/' + path        
 
-    def _create_mining_api_url(self, path: str, version: str = MARGIN_API_URL ) -> str:
-        return self.MARGIN_API_URL.format(self.tld) + '/' + self.MARGIN_API_VERSION + '/mining/' + path        
-
-    def _create_capital_api_url(self, path: str, version: str = MARGIN_API_URL ) -> str:
-        return self.MARGIN_API_URL.format(self.tld) + '/' + self.MARGIN_API_VERSION + '/capital/' + path
+    def _create_capital_api_url(self, path: str, version: str = BALANCES_API_URL ) -> str:
+        return self.BALANCES_API_URL.format(self.tld) + '/' + self.BALANCES_API_VERSION + '/capital/' + path
       
     def _request_mining_api(self, method, path, signed=False, **kwargs):
         uri = self._create_mining_api_url(path)
