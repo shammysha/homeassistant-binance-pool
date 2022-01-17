@@ -164,7 +164,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         }
         
         for type, native in self._native_balance.items():
-            for asset, exchange in type.items(): 
+            for asset, exchange in native.items(): 
                 data[f"Native {type} balance in {asset}"] = "{:.8f}".format(exchange) + f" {asset}"
          
         return data
