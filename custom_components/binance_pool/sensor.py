@@ -567,12 +567,12 @@ class BinanceProfitSensor(SensorEntity):
                           for native in self._native: 
                               for ticker in self._binance_data.tickers:
                                   if ticker["symbol"] == self._coin + native.upper():
-                                      self._native_earnings[native] = "{:.8f}".format(float(ticker["price"]) * float(self._estimate))
+                                      self._native_earnings[native] = "{:.8f}".format(float(ticker["price"]) * float(self._earnings))
                               
                                       break
                                   
                                   if ticker["symbol"] == native.upper() + self._coin:      
-                                      self._native_earnings[native] = "{:.8f}".format(float(self._estimate) / float(ticker["price"]))
+                                      self._native_earnings[native] = "{:.8f}".format(float(self._earnings) / float(ticker["price"]))
                               
                                       break 
 
