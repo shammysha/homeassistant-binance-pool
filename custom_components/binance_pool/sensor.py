@@ -115,7 +115,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class BinanceSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, coin, free, locked, freeze, native):
+    def __init__(self, binance_data, name, coin, free, locked, freeze, native = []):
         """Initialize the sensor."""
         self._binance_data = binance_data
         self._name = f"{name} {coin} Balance"
@@ -181,7 +181,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                 self._freeze = balance["freeze"]
                 self._state = self._total
                 
-                if native:
+                if self._native:
                     for native in self._native:
                         for ticker in self._binance_data.tickers:
                     
