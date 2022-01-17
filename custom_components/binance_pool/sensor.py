@@ -25,8 +25,8 @@ DEFAULT_COIN_ICON = "mdi:currency-usd-circle"
 ATTRIBUTION = "Data provided by Binance"
 ATTR_FREE = "free"
 ATTR_LOCKED = "locked"
+ATTR_FREEZE = "locked"
 ATTR_TOTAL = "total"
-ATTR_NATIVE_BALANCE = "native_balance"
 
 ATTR_WORKER_STATUS = "status"
 ATTR_WORKER_HRATE = "hashrate"
@@ -155,7 +155,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
-            ATTR_NATIVE_BALANCE: f"{self._native_balance} {self._native}",
+            ATTR_FREEZE: f"{self._freeze}  {self._unit_of_measurement}",
             ATTR_FREE: f"{self._free} {self._unit_of_measurement}",
             ATTR_LOCKED: f"{self._locked} {self._unit_of_measurement}",
             ATTR_TOTAL: f"{total} {self._unit_of_measurement}",
