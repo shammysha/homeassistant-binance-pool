@@ -125,8 +125,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         self._freeze = freeze
         self._native = native
         self._unit_of_measurement = coin
+        self._total = float(free) + float(locked) + float(freeze)
         self._state = None
-        self._native_balance = None
+        self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {} }
 
     @property
     def name(self):
@@ -154,35 +155,51 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
 
-        total = "{:.8f}".format(float(self._free) + float(self._locked) + float(self._freeze))
-        
-        return {
+        data = {
             ATTR_ATTRIBUTION: ATTRIBUTION,
-            ATTR_NATIVE_BALANCE: f"{self._native_balance} {self._native}",
             ATTR_FREE: "{:.8f}".format(float(self._free)) + f" {self._unit_of_measurement}",
             ATTR_LOCKED: "{:.8f}".format(float(self._locked)) + f" {self._unit_of_measurement}",
             ATTR_FREEZE: "{:.8f}".format(float(self._freeze)) + f" {self._unit_of_measurement}",            
-            ATTR_TOTAL: "{:.8f}".format(float(total)) + f" {self._unit_of_measurement}",
- 
+            ATTR_TOTAL: "{:.8f}".format(float(self._total)) + f" {self._unit_of_measurement}",
         }
+        
+        for type, native in self._native_balance.items():
+            for asset, exchange in type.items(): 
+                data[f"Native {type} balance in {asset}"] = "{:.8f}".format(exchange) + f" {asset}"
+         
+        return data
 
     def update(self):
         """Update current values."""
         self._binance_data.update()
         for balance in self._binance_data.balances:
             if balance["coin"] == self._coin:
-                self._state = balance["free"]
+                
+                self._total = float(balance["free"]) + float(balance["locked"]) + float(balance["freeze"])
                 self._free = balance["free"]
                 self._locked = balance["locked"]
                 self._freeze = balance["freeze"]
-
-                break
-
-        for ticker in self._binance_data.tickers:
-            if ticker["symbol"] == self._coin + self._native:
-                self._native_balance = round(
-                    float(ticker["price"]) * float(self._free), 2
-                )
+                self._state = self._total
+                
+                if native:
+                    for native in self._native:
+                        for ticker in self._binance_data.tickers:
+                    
+                            if ticker["symbol"] == self._coin + native.upper():
+                                self._native_balance["total"][native] = float(ticker["price"]) * float(self._total)
+                                self._native_balance["free"][native] = float(ticker["price"]) * float(self._free)
+                                self._native_balance["locked"][native] = float(ticker["price"]) * float(self._free)
+                                self._native_balance["freeze"][native] = float(ticker["price"]) * float(self._freeze)
+                            
+                                break
+                            
+                            if ticker["symbol"] == native.upper() + self._coin:      
+                                self._native_balance["total"][native] = float(self._total) / float(ticker["price"])
+                                self._native_balance["free"][native] = float(self._free) / float(ticker["price"])
+                                self._native_balance["locked"][native] = float(self._locked) / float(ticker["price"])
+                                self._native_balance["freeze"][native] = float(self._freeze) / float(ticker["price"])                                                  
+                            
+                                break
                 break
 
 

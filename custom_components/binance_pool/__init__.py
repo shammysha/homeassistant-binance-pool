@@ -17,7 +17,7 @@ DOMAIN = "binance_pool"
 
 DEFAULT_NAME = "Binance"
 DEFAULT_DOMAIN = "us"
-DEFAULT_CURRENCY = "USD"
+DEFAULT_CURRENCY = [ "USD" ]
 CONF_API_SECRET = "api_secret"
 CONF_BALANCES = "balances"
 CONF_EXCHANGES = "exchanges"
@@ -39,7 +39,9 @@ CONFIG_SCHEMA = vol.Schema(
             {
                 vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
                 vol.Optional(CONF_DOMAIN, default=DEFAULT_DOMAIN): cv.string,
-                vol.Optional(CONF_NATIVE_CURRENCY, default=DEFAULT_CURRENCY): cv.string,
+                vol.Optional(CONF_NATIVE_CURRENCY, default=DEFAULT_CURRENCY): vol.All(
+                    cv.ensure_list, [cv.string]
+                ),
                 vol.Required(CONF_API_KEY): cv.string,
                 vol.Required(CONF_API_SECRET): cv.string,
                 vol.Optional(CONF_BALANCES, default=[]): vol.All(
@@ -65,7 +67,7 @@ def setup(hass, config):
     balances = config[DOMAIN].get(CONF_BALANCES)
     tickers = config[DOMAIN].get(CONF_EXCHANGES)
     miners = config[DOMAIN].get(CONF_MINING)
-    native_currency = config[DOMAIN].get(CONF_NATIVE_CURRENCY).upper()
+    native_currency = config[DOMAIN].get(CONF_NATIVE_CURRENCY)
     tld = config[DOMAIN].get(CONF_DOMAIN)
 
     hass.data[DATA_BINANCE] = binance_data = BinanceData(api_key, api_secret, tld, miners)

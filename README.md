@@ -27,25 +27,26 @@ binance_pool:
 ```
 
 #### Configuration variables:
-| Key               | Type   | Required | Description                            | Default |
-| :---------------- | :----: | :------: |:-------------------------------------- | :-----: |
-| `name`            | string | No       | Name for the created sensors           | Binance |
-| `domain`          | string | No       | Binance domain to query                | us      |
-| `native_currency` | string | No       | Native currency for price calculations | USD     |
-| `api_key`         | string | Yes      | Binance API key                        | -       |
-| `api_secret`      | string | Yes      | Binance API secret                     | -       |
-| `balances`        | array  | No       | List of coins for wallet balances      | -       |
-| `exchanges`       | array  | No       | List of pairs for exchange rates       | -       |
-| `miners`          | array  | No       | List of pool accounts                  | -       |
+| Key               | Type   | Required | Description                               | Default |
+| :---------------- | :----: | :------: |:--------------------------------------    | :-----: |
+| `name`            | string | No       | Name for the created sensors              | Binance |
+| `domain`          | string | No       | Binance domain to query                   | us      |
+| `native_currency` | array  | No       | List of currencies for price calculations | USD     |
+| `api_key`         | string | Yes      | Binance API key                           | -       |
+| `api_secret`      | string | Yes      | Binance API secret                        | -       |
+| `balances`        | array  | No       | List of coins for wallet balances         | -       |
+| `exchanges`       | array  | No       | List of pairs for exchange rates          | -       |
+| `miners`          | array  | No       | List of pool accounts                     | -       |
 
 #### Full example configuration
 ```yaml
 binance_pool:
   name: My Binance
   domain: us
-  native_currency: USD
   api_key: !secret binance_api_key
   api_secret: !secret binance_api_secret
+  native_currency: 
+  	- USD
   balances:
     - USD
     - BTC
@@ -83,7 +84,7 @@ This integration is set up to query [Binance.us](https://www.binance.us/) by def
 An API key and secret from Binance are **required** for this integration to function.  It is *highly recommended* to store your API key and secret in Home Assistant's `secrets.yaml` file.
 
 #### `native_currency`
-Each balance sensor this integration creates will have a state attribute named `native_balance`, which represents the current value of the represented balance, converted to the currency specified by `native_currency`. The default native currency used for balance conversions is USD.
+Each balance sensor this integration creates will have a state attributes, which represents pairs ("total", "free", "locked", "freeze") and list of `native_currency` items. The default native currency used for balance conversions is USD.
 
 #### `balances`
 A list of coins (or currencies) can be specified here, and this integration will create a sensor for your current balance in each of them. By default (without adding this key), a sensor will be created for every coin that Binance offers (54 unique coins/currencies from Binance.us at this time). If one of the given coins isn't available from the specified domain, a sensor won't be created.
