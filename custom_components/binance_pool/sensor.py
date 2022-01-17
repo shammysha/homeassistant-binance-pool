@@ -148,7 +148,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     def icon(self):
         """Icon to use in the frontend, if any."""
 
-        return CURRENCY_ICONS.get(self._asset, "mdi:currency-" + self._asset.lower())
+        return CURRENCY_ICONS.get(self._coin, "mdi:currency-" + self._coin.lower())
 
     @property
     def extra_state_attributes(self):
