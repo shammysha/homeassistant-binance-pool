@@ -221,10 +221,10 @@ class BinanceData:
             
 class BinancePoolClient(Client):
 
-    def _create_mining_api_url(self, path: str, version: str = self.MARGIN_API_URL ) -> str:
-        return self.MARGIN_API_URL.format(self.tld) + '/' + self.MARGIN_API_VERSION + '/mining/' + path        
+    def _create_mining_api_url(self, path: str, version: str = MARGIN_API_URL ) -> str:
+        return self.MARGIN_API_URL.format(self.tld) + '/' + MARGIN_API_VERSION + '/mining/' + path        
 
-    def _create_capital_api_url(self, path: str, version: str = self.MARGIN_API_URL ) -> str:
+    def _create_capital_api_url(self, path: str, version: str = MARGIN_API_URL ) -> str:
         return self.MARGIN_API_URL.format(self.tld) + '/' + self.MARGIN_API_VERSION + '/capital/' + path
       
     def _request_mining_api(self, method, path, signed=False, **kwargs):
