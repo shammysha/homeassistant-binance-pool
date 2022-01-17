@@ -25,7 +25,7 @@ DEFAULT_COIN_ICON = "mdi:currency-usd-circle"
 ATTRIBUTION = "Data provided by Binance"
 ATTR_FREE = "free"
 ATTR_LOCKED = "locked"
-ATTR_FREEZE = "locked"
+ATTR_FREEZE = "freeze"
 ATTR_TOTAL = "total"
 
 ATTR_WORKER_STATUS = "status"
@@ -123,7 +123,6 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         self._freeze = freeze
         self._unit_of_measurement = coin
         self._state = None
-        self._native_balance = None
 
     @property
     def name(self):
