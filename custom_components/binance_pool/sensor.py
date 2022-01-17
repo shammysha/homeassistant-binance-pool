@@ -159,10 +159,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
             ATTR_NATIVE_BALANCE: f"{self._native_balance} {self._native}",
-            ATTR_FREE: f"{self._free} {self._unit_of_measurement}",
-            ATTR_LOCKED: f"{self._locked} {self._unit_of_measurement}",
-            ATTR_FREEZE: f"{self._freeze} {self._unit_of_measurement}",            
-            ATTR_TOTAL: f"{total} {self._unit_of_measurement}",
+            ATTR_FREE: "{:.8f}".format(float(self._free)) + f" {self._unit_of_measurement}",
+            ATTR_LOCKED: "{:.8f}".format(float(self._locked)) + f" {self._unit_of_measurement}",
+            ATTR_FREEZE: "{:.8f}".format(float(self._freeze)) + f" {self._unit_of_measurement}",            
+            ATTR_TOTAL: "{:.8f}".format(float(total)) + f" {self._unit_of_measurement}",
  
         }
 
