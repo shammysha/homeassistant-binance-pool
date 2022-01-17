@@ -27,6 +27,7 @@ ATTR_FREE = "free"
 ATTR_LOCKED = "locked"
 ATTR_FREEZE = "freeze"
 ATTR_TOTAL = "total"
+ATTR_NATIVE_BALANCE = "native balance"
 
 ATTR_WORKER_STATUS = "status"
 ATTR_WORKER_HRATE = "hashrate"
@@ -55,15 +56,16 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     if discovery_info is None:
         return
     
-    elif all(i in discovery_info for i in ["name", "coin", "free", "locked", "freeze"]):
+    elif all(i in discovery_info for i in ["name", "coin", "free", "locked", "freeze", "native"]):
         name = discovery_info["name"]
         coin = discovery_info["coin"]
         free = discovery_info["free"]
         locked = discovery_info["locked"]
         freeze = discovery_info["freeze"]
+        native = discovery_info["native"]
 
         sensor = BinanceSensor(
-            hass.data[DATA_BINANCE], name, coin, free, locked, freeze
+            hass.data[DATA_BINANCE], name, coin, free, locked, freeze, native
         )
 
     elif all(i in discovery_info for i in ["name", "symbol", "price"]):
@@ -113,7 +115,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 class BinanceSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, coin, free, locked, freeze):
+    def __init__(self, binance_data, name, coin, free, locked, freeze, native):
         """Initialize the sensor."""
         self._binance_data = binance_data
         self._name = f"{name} {coin} Balance"
@@ -121,8 +123,10 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         self._free = free
         self._locked = locked
         self._freeze = freeze
+        self._native = native
         self._unit_of_measurement = coin
         self._state = None
+        self._native_balance = None
 
     @property
     def name(self):
@@ -154,10 +158,12 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
-            ATTR_FREEZE: f"{self._freeze} {self._unit_of_measurement}",
+            ATTR_NATIVE_BALANCE: f"{self._native_balance} {self._native}",
             ATTR_FREE: f"{self._free} {self._unit_of_measurement}",
             ATTR_LOCKED: f"{self._locked} {self._unit_of_measurement}",
+            ATTR_FREEZE: f"{self._freeze} {self._unit_of_measurement}",            
             ATTR_TOTAL: f"{total} {self._unit_of_measurement}",
+ 
         }
 
     def update(self):
@@ -173,7 +179,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
                 break
 
         for ticker in self._binance_data.tickers:
-            if ticker["symbol"] == self._asset + self._native:
+            if ticker["symbol"] == self._coin + self._native:
                 self._native_balance = round(
                     float(ticker["price"]) * float(self._free), 2
                 )

@@ -76,6 +76,7 @@ def setup(hass, config):
         for balance in binance_data.balances:
             if not balances or balance["coin"] in balances:
                 balance["name"] = name
+                balance["native"] = native_currency
                 balance.pop("networkList", None)
                 load_platform(hass, "sensor", DOMAIN, balance, config)
 
