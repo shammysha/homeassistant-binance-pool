@@ -399,7 +399,7 @@ class BinanceStatusSensor(SensorEntity):
         self._unknown_workers = unknown
         self._invalid_workers = invalid
         self._inactive_workers = inactive
-        self._unit_of_measurement = None        
+        self._unit_of_measurement = "H/s"        
         self._state = None
 
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
@@ -464,8 +464,8 @@ class BinanceStatusSensor(SensorEntity):
                 self._valid_workers = type["status"]["validNum"]
                 self._total_alerts = type["status"]["invalidNum"]
                 
-                self._state = float("{:.2f}".format(float(self._hrate15m) / 10 ** 12))
-
+                self._state = self._hrate15m
+                
                 unknown = invalid = inactive = 0 
                 
                 if "workers" in type:
