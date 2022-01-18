@@ -97,7 +97,8 @@ A list of pool accounts can be specified here
 
 ### Example Lovelace card
 ---
-![card](https://user-images.githubusercontent.com/65885873/149632481-79e319bf-755b-401e-87b9-d280a39c5801.png)
+![card](https://user-images.githubusercontent.com/65885873/149895291-c4089990-402c-46f8-b0ea-c9ec9398a497.png)
+
 
 ```yaml
 type: custom:layout-card
@@ -109,30 +110,74 @@ cards:
       - type: entities
         entities:
           - entity: sensor.my_binance_btc_balance
-            name: BTC free
+            name: BTC
+            unit: BTC
+            type: custom:multiple-entity-row
+            attribute: total
+            styles:
+              font-weight: bold
+              font-size: 120%
+            secondary_info:
+              type: attribute
+              attribute: Native total balance in USDT
+              unit: USDT
+              name: false
           - entity: sensor.my_binance_btc_balance
-            name: BTC locked
-            type: attribute
-            attribute: locked
+            type: custom:multiple-entity-row
+            name: false
+            icon: mdi:none
+            show_state: false
+            entities:
+              - entity: sensor.my_binance_btc_balance
+                name: Free
+                type: attribute
+                attribute: free
+              - entity: sensor.my_binance_btc_balance
+                name: Freeze
+                type: attribute
+                attribute: freeze
+              - entity: sensor.my_binance_btc_balance
+                name: Locked
+                type: attribute
+                attribute: locked
           - type: divider
           - entity: sensor.my_binance_usdt_balance
-            icon: mdi:currency-usd
-            name: USDT free
+            name: USDT
+            unit: USDT
+            type: custom:multiple-entity-row
+            attribute: total
+            styles:
+              font-weight: bold
+              font-size: 120%
           - entity: sensor.my_binance_usdt_balance
-            name: USDT locked
-            type: attribute
-            attribute: locked
-            icon: mdi:currency-usd
+            type: custom:multiple-entity-row
+            name: false
+            icon: mdi:none
+            show_state: false
+            entities:
+              - entity: sensor.my_binance_usdt_balance
+                name: Free
+                type: attribute
+                attribute: free
+              - entity: sensor.my_binance_usdt_balance
+                name: Freeze
+                type: attribute
+                attribute: freeze
+              - entity: sensor.my_binance_usdt_balance
+                name: Locked
+                type: attribute
+                attribute: locked
   - type: custom:apexcharts-card
-    graph_span: 4d
+    graph_span: 3d
     header:
       show: true
       title: Exchange
       standard_format: true
       show_states: true
+    show:
+      last_updated: true
     now:
       show: true
-      label: Now
     all_series_config:
       curve: smooth
       type: line
@@ -141,6 +186,8 @@ cards:
         extremas: true
     series:
       - entity: sensor.my_binance_btcusdt_exchange
+        name: 1 BTC
+        unit: ' USDT'
   - type: custom:layout-break
   - type: custom:vertical-stack-in-card
     title: Pool
@@ -148,28 +195,64 @@ cards:
       - type: entities
         entities:
           - entity: sensor.my_binance_account_sha256_status
-            name: Workers active
-            type: attribute
+            name: Valid workers
+            type: custom:multiple-entity-row
             attribute: valid workers
             icon: mdi:server-network
+            styles:
+              font-weight: bold
+              font-size: 120%
           - entity: sensor.my_binance_account_sha256_status
-            name: Workers inactive
-            type: attribute
-            attribute: all workers with alerts
+            type: custom:multiple-entity-row
+            attribute: Workers with alerts
             icon: mdi:server-network-off
+            name: false
+            show_state: false
+            styles:
+              font-weight: bold
+              font-size: 120%
+            entities:
+              - entity: sensor.my_binance_account_sha256_status
+                name: Invalid
+                type: attribute
+                attribute: invalid workers
+              - entity: sensor.my_binance_account_sha256_status
+                name: Inactive
+                type: attribute
+                attribute: invalid workers
+              - entity: sensor.my_binance_account_sha256_status
+                name: Unavailable
+                type: attribute
+                attribute: unknown workers
           - type: divider
           - entity: sensor.my_binance_account_sha256_btc_profit
             name: Yesterday earnings
-            type: attribute
+            unit: BTC
+            type: custom:multiple-entity-row
             attribute: yesterday's earnings
-            icon: mdi:currency-btc
-            suffix: BTC
+            styles:
+              font-weight: bold
+              font-size: 120%
+            secondary_info:
+              type: attribute
+              attribute: Native earnings in USDT
+              unit: USDT
+              name: false
+              format: precision2
           - entity: sensor.my_binance_account_sha256_btc_profit
             name: Estimated profit
-            type: attribute
+            unit: BTC
+            type: custom:multiple-entity-row
             attribute: estimated profit
-            icon: mdi:currency-btc
-            suffix: BTC
+            styles:
+              font-weight: bold
+              font-size: 120%
+            secondary_info:
+              type: attribute
+              attribute: Native estimate in USDT
+              unit: USDT
+              name: false
+              format: precision2
   - type: custom:apexcharts-card
     graph_span: 1d
     header:
@@ -177,14 +260,18 @@ cards:
       title: Workers
       standard_format: true
       show_states: true
+    show:
+      last_updated: true
     now:
       show: true
-      label: Now
     all_series_config:
       curve: smooth
       type: line
       stroke_width: 1
       fill_raw: zero
+      group_by:
+        func: avg
+        duration: 15min
       show:
         in_header: false
         extremas: false
@@ -204,19 +291,20 @@ cards:
       - entity: sensor.my_binance_account_10x5x18x8_sha256_worker
         name: 10x5x18x8
       - entity: sensor.my_binance_account_sha256_status
-        name: 15 min average
+        name: Average (15m)
         attribute: average hashrate (15 mins)
         transform: return x / 10**12
-        unit: TH/s
+        unit: ' TH/s'
         show:
           in_header: true
           in_chart: false
       - entity: sensor.my_binance_account_sha256_status
-        name: 24 hour average
-        attribute: average hashrate (24 hours
+        name: Average (24h)
+        attribute: average hashrate (24 hours)
         transform: return x / 10**12
-        unit: TH/s
+        unit: ' TH/s'
         show:
           in_header: true
           in_chart: false
+
 ```
