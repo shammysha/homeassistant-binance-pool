@@ -18,8 +18,6 @@ CURRENCY_ICONS = {
     "RUB": "mdi:currency-rub"
 }
 
-QUOTE_ASSETS = ["USD", "BTC", "USDT", "BUSD", "USDC", "RUB"]
-
 DEFAULT_COIN_ICON = "mdi:currency-usd-circle"
 
 ATTRIBUTION = "Data provided by Binance"
