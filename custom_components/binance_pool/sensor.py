@@ -253,13 +253,27 @@ class BinanceExchangeSensor(SensorEntity):
     def update(self):
         """Update current values."""
         self._binance_data.update()
+        
+        symbols = {}
+        for coin1 in self._binance_data.balances:
+            for coin2 in self._binance_data.balances:
+                if coin1["coin"] == coin2["coin"]: 
+                    continue
+                    
+                symbol = "{}{}".format(coin1["coin"], coin2["coin"]).upper()
+                
+                if symbol not in symbols:
+                    symbols[symbol] = coin2["coin"]
+                
+                
         for ticker in self._binance_data.tickers:
             if ticker["symbol"] == self._symbol:
                 self._state = float(ticker["price"])
-                if ticker["symbol"][-4:] in QUOTE_ASSETS[2:5]:
-                    self._unit_of_measurement = ticker["symbol"][-4:]
-                elif ticker["symbol"][-3:] in QUOTE_ASSETS[:2]:
-                    self._unit_of_measurement = ticker["symbol"][-3:]
+                
+                symbol = ticker["symbol"].upper()
+                if symbol in symbols:
+                    self._unit_of_measurement = symbols[symbol]
+
                 break
 
    
