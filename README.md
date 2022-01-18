@@ -46,7 +46,7 @@ binance_pool:
   api_key: !secret binance_api_key
   api_secret: !secret binance_api_secret
   native_currency: 
-  	- USD
+    - USD
   balances:
     - USD
     - BTC
