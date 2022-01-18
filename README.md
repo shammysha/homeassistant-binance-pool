@@ -219,7 +219,7 @@ cards:
               - entity: sensor.my_binance_account_sha256_status
                 name: Inactive
                 type: attribute
-                attribute: invalid workers
+                attribute: inactive workers
               - entity: sensor.my_binance_account_sha256_status
                 name: Unavailable
                 type: attribute
