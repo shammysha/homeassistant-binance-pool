@@ -279,18 +279,32 @@ cards:
     series:
       - entity: sensor.my_binance_account_002_sha256_worker
         name: '002'
+        transform: return x / 10**12
+        unit: ' TH/s'        
       - entity: sensor.my_binance_account_003_sha256_worker
         name: '003'
+        transform: return x / 10**12
+        unit: ' TH/s'        
       - entity: sensor.my_binance_account_005_sha256_worker
         name: '005'
+        transform: return x / 10**12
+        unit: ' TH/s'        
       - entity: sensor.my_binance_account_006_sha256_worker
         name: '006'
+        transform: return x / 10**12
+        unit: ' TH/s'        
       - entity: sensor.my_binance_account_007_sha256_worker
         name: '007'
+        transform: return x / 10**12
+        unit: ' TH/s'        
       - entity: sensor.my_binance_account_10x5x18x7_sha256_worker
         name: 10x5x18x7
+        transform: return x / 10**12
+        unit: ' TH/s'        
       - entity: sensor.my_binance_account_10x5x18x8_sha256_worker
         name: 10x5x18x8
+        transform: return x / 10**12
+        unit: ' TH/s'        
       - entity: sensor.my_binance_account_sha256_status
         name: Average (15m)
         attribute: average hashrate (15 mins)
