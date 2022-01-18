@@ -109,7 +109,7 @@ def setup(hass, config):
                         elif worker["status"] == 2:
                             invalid += 1
                         elif worker["status"] == 3:
-                            invactive += 1    
+                            inactive += 1    
                         
                 if "status" in type:
                     status = type["status"]
