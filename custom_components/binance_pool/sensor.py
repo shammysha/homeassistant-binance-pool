@@ -255,7 +255,7 @@ class BinanceExchangeSensor(SensorEntity):
         self._binance_data.update()
         for ticker in self._binance_data.tickers:
             if ticker["symbol"] == self._symbol:
-                self._state = ticker["price"]
+                self._state = float(ticker["price"])
                 if ticker["symbol"][-4:] in QUOTE_ASSETS[2:5]:
                     self._unit_of_measurement = ticker["symbol"][-4:]
                 elif ticker["symbol"][-3:] in QUOTE_ASSETS[:2]:
@@ -575,7 +575,7 @@ class BinanceProfitSensor(SensorEntity):
                         for native in self._native: 
                             for ticker in self._binance_data.tickers:
                                 if ticker["symbol"] == self._coin + native.upper():
-                                    self._native_estimate[native] = "{:.8f}".format(float(ticker["price"]) * float(self._estimate))
+                                    self._native_estimate[native] = float("{:.8f}".format(float(ticker["price"]) * float(self._estimate)))
                             
                                     break
                                 
@@ -586,7 +586,7 @@ class BinanceProfitSensor(SensorEntity):
                     
                     if coin in earnings:
                         self._earnings = earnings[coin]
-                        self._state = earnings[coin]
+                        self._state = float(earnings[coin])
                           
                     else:
                         self._earnings = 0.00
