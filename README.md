@@ -97,7 +97,8 @@ A list of pool accounts can be specified here
 
 ### Example Lovelace card
 ---
-![card](https://user-images.githubusercontent.com/65885873/149895291-c4089990-402c-46f8-b0ea-c9ec9398a497.png)
+
+![card](https://user-images.githubusercontent.com/65885873/149904873-d5cbf8b2-a69f-46be-bcdc-05b4133f6912.png)
 
 
 ```yaml
