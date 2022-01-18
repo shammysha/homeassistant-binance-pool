@@ -291,7 +291,7 @@ class BinanceWorkerSensor(SensorEntity):
         self._hrate_daily = hrate_daily
         self._reject = reject
         self._update = update
-        self._unit_of_measurement = 'TH/s'        
+        self._unit_of_measurement = "H/s"        
         self._state = None
         
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
@@ -371,7 +371,7 @@ class BinanceWorkerSensor(SensorEntity):
                     self._reject = worker["rejectRate"]
                     self._update = worker["lastShareTime"]
 
-                    self._state = float("{:.2f}".format(float(worker["hashRate"]) / 10 ** 12))
+                    self._state = self._hrate
     
                     break                
                 if exists:
