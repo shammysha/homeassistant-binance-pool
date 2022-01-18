@@ -309,3 +309,12 @@ cards:
           in_chart: false
 
 ```
+
+## Donate
+
+if You like this component - feel free to donate me
+
+* BTC: 1ALWfyhkniqZjLzckS2GDKmQXvEnzvDfth 
+* ETH: 0xef89238d7a30694041e64e31b7991344e618923f
+* LTC: LeHu1RaJhjH6bsoiqtEwZoZg6K6qeorsRf
+* USDT: TFLt756zrKRFcvhSkjSWaXkfEzhv2M55YN
