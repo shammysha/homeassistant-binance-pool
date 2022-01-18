@@ -48,12 +48,12 @@ binance_pool:
   native_currency: 
     - USD
   balances:
-    - USD
+    - USDT
     - BTC
     - ETH
   exchanges:
-    - BTCUSC
-    - ETHUSD
+    - BTCUSDT
+    - ETHUSDT
   miners:
     - account
 ```
