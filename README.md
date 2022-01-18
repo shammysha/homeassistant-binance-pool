@@ -155,7 +155,7 @@ cards:
           - entity: sensor.my_binance_account_sha256_status
             name: Workers inactive
             type: attribute
-            attribute: invalid workers
+            attribute: all workers with alerts
             icon: mdi:server-network-off
           - type: divider
           - entity: sensor.my_binance_account_sha256_btc_profit
