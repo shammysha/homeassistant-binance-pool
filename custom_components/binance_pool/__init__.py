@@ -105,11 +105,11 @@ def setup(hass, config):
                         load_platform(hass, "sensor", DOMAIN, worker, config)
                         
                         if worker["status"] == 0:
-                            unknown++
+                            unknown += 1
                         elif worker["status"] == 2:
-                            invalid++
+                            invalid += 1
                         elif worker["status"] == 3:
-                            invactive++    
+                            invactive += 1    
                         
                 if "status" in type:
                     status = type["status"]

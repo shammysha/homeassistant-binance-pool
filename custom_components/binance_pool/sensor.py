@@ -459,11 +459,11 @@ class BinanceStatusSensor(SensorEntity):
                 if "workers" in type:
                     for worker in type["workers"]:
                         if worker["status"] == 0:
-                            unknown++
+                            unknown += 1
                         elif worker["status"] == 2:
-                            invalid++
+                            invalid += 1
                         elif worker["status"] == 3:
-                            invactive++
+                            invactive += 1
 
                     self._unknown_workers = unknown
                     self._invalid_workers = invalid
