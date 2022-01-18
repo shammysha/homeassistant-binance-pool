@@ -40,6 +40,9 @@ ATTR_STATUS_HRATE15M = "average hashrate (15 mins)"
 ATTR_STATUS_HRATE24H = "average hashrate (24 hours)"
 ATTR_STATUS_VALID_WORKERS = "valid workers"
 ATTR_STATUS_INVALID_WORKERS = "invalid workers"
+ATTR_STATUS_INACTIVE_WORKERS = "inactive workers"
+ATTR_STATUS_UNKNOWN_WORKERS = "unknown workers"
+ATTR_STATUS_TOTAL_ALERTS = "All workers with alerts"
 
 ATTR_PROFIT_ESTIMATE = "estimated profit"
 ATTR_PROFIT_EARNINGS = "yesterday's earnings"
@@ -89,7 +92,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
 
         sensor = BinanceWorkerSensor(hass.data[DATA_BINANCE], name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
 
-    elif all(i in discovery_info for i in ["name", "account", "algorithm", "fifteenMinHashRate", "dayHashRate", "validNum", "invalidNum"]):
+    elif all(i in discovery_info for i in ["name", "account", "algorithm", "fifteenMinHashRate", "dayHashRate", "validNum", "invalidNum", "unknown", "invalid", "inactive"]):
         name = discovery_info["name"]
         account = discovery_info["account"]
         algorithm = discovery_info["algorithm"]
@@ -97,8 +100,11 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         hrate_day = discovery_info["dayHashRate"]
         validNum = discovery_info["validNum"]
         invalidNum = discovery_info["invalidNum"]
+        unknown = discovery_info["unknown"]
+        invalid = discovery_info["invalid"]
+        inactive = discovery_info["inactive"]
 
-        sensor = BinanceStatusSensor(hass.data[DATA_BINANCE], name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum)
+        sensor = BinanceStatusSensor(hass.data[DATA_BINANCE], name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive)
         
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday", "native"]):
         name = discovery_info["name"]
@@ -368,7 +374,7 @@ class BinanceWorkerSensor(SensorEntity):
 class BinanceStatusSensor(SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum):
+    def __init__(self, binance_data, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive):
         """Initialize the sensor."""
         self._binance_data = binance_data
         self._name = f"{name} {account} ({algorithm}) status"
@@ -377,9 +383,14 @@ class BinanceStatusSensor(SensorEntity):
         self._hrate15m = hrate_15min
         self._hrate24h = hrate_day
         self._valid_workers = validNum
-        self._invalid_workers = invalidNum
+        self._total_alerts = invalidNum
+        self._unknown_workers = unknown
+        self._invalid_workers = invalid
+        self._inactive_workers = inactive
         self._unit_of_measurement = None        
         self._state = None
+
+        self._status_vars = ["unknown", "valid", "invalid", "inactive"]
 
     @property
     def name(self):
@@ -411,7 +422,10 @@ class BinanceStatusSensor(SensorEntity):
             ATTR_STATUS_HRATE15M: f"{self._hrate15m}",
             ATTR_STATUS_HRATE24H: f"{self._hrate24h}",
             ATTR_STATUS_VALID_WORKERS: f"{self._valid_workers}",
-            ATTR_STATUS_INVALID_WORKERS: f"{self._invalid_workers}",    
+            ATTR_STATUS_TOTAL_ALERTS: f"{self._total_alerts}",    
+            ATTR_STATUS_UNKNOWN_WORKERS: f"{self._unknown_workers}",
+            ATTR_STATUS_INVALID_WORKERS: f"{self._invalid_workers}",
+            ATTR_STATUS_INACTIVE_WORKERS: f"{self._inactive_workers}",
             ATTR_ACCOUNT: f"{self._account}",
             ATTR_ALGO: f"{self._algorithm}",
         }
@@ -430,15 +444,30 @@ class BinanceStatusSensor(SensorEntity):
             for algo, type in algos.items():
                 if algo != self._algorithm or "status" not in type:
                     continue
-                
+
                 exists = True
                 
                 self._hrate15m = type["status"].get("fifteenMinHashRate", 0)
                 self._hrate24h = type["status"].get("dayHashRate", 0)
                 self._valid_workers = type["status"]["validNum"]
-                self._invalid_workers = type["status"]["invalidNum"]
+                self._total_alerts = type["status"]["invalidNum"]
                 
                 self._state = float("{:.2f}".format(float(self._hrate15m) / 10 ** 12))
+
+                unknown = invalid = inactive = 0 
+                
+                if "workers" in type:
+                    for worker in type["workers"]:
+                        if worker["status"] == 0:
+                            unknown++
+                        elif worker["status"] == 2:
+                            invalid++
+                        elif worker["status"] == 3:
+                            invactive++
+
+                    self._unknown_workers = unknown
+                    self._invalid_workers = invalid
+                    self._inactive_workers = inactive
 
                 break
             

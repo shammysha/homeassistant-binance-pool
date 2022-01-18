@@ -95,6 +95,8 @@ def setup(hass, config):
     else:
         for account, algos in binance_data.mining["accounts"].items():
             for algo, type in algos.items():
+                unknown = invalid = inactive = 0
+                
                 if "workers" in type:
                     for worker in type["workers"]:
                         worker["name"] = name
@@ -102,11 +104,21 @@ def setup(hass, config):
                         worker["account"] = account
                         load_platform(hass, "sensor", DOMAIN, worker, config)
                         
+                        if worker["status"] == 0:
+                            unknown++
+                        elif worker["status"] == 2:
+                            invalid++
+                        elif worker["status"] == 3:
+                            invactive++    
+                        
                 if "status" in type:
                     status = type["status"]
                     status["name"] = name
                     status["algorithm"] = algo
                     status["account"] = account
+                    status["unknown"] = unknown
+                    status["invalid"] = invalid
+                    status["inactive"] = inactive
                     
                     if "fifteenMinHashRate" not in status:
                         status["fifteenMinHashRate"] = 0
@@ -145,7 +157,7 @@ def setup(hass, config):
                     
                     status.pop("profitToday", None)
                     status.pop("profitYesterday", None)
-                    
+                  
                     load_platform(hass, "sensor", DOMAIN, status, config)                                        
     return True
 
