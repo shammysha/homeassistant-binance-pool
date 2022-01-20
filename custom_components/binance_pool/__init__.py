@@ -174,7 +174,6 @@ class BinanceData:
         self.mining = {}
         self.tld = tld
         
-        await hass.async_add_executor_job()
         future = asyncio.run_coroutine_threadsafe( self.async_update(), hass.loop )
         
         if miners: 
