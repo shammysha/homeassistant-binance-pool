@@ -592,7 +592,7 @@ class BinanceProfitSensor(SensorEntity):
                             if float(self._estimate) > 0 and float(new_estimate) == 0:
                                 new_earnings = self._estimate
                             else 
-                                new_earnings = self.__earnings
+                                new_earnings = self._earnings
                     else:
                         new_earnings = 0.00
                         new_state = 0.00
