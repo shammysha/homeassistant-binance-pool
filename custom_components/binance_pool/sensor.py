@@ -574,14 +574,32 @@ class BinanceProfitSensor(SensorEntity):
 
                     estimate = type["status"].get("profitToday", {})
                     earnings = type["status"].get("profitYesterday", {})
-                        
+
+                    new_estimate = 0.00
+                    new_earnings = 0.00
+                                            
                     exists = True
                                             
                     if coin in estimate:
-                        self._estimate = estimate[coin]
+                        new_estimate = estimate[coin]
                             
                     else:
-                        self._estimate = 0.00
+                        new_estimate = 0.00
+
+
+                    if coin in earnings:
+                        if float(self._earnings) > 0 and float(earnings[coin]) == 0:
+                            if float(self._estimate) > 0 and float(new_estimate) == 0:
+                                new_earnings = self._estimate
+                            else 
+                                new_earnings = self.__earnings
+                    else:
+                        new_earnings = 0.00
+                        new_state = 0.00
+                        
+
+                    self._estimate = new_estimate
+                    self._earnings = new_earnings
 
                     if self._native:
                         for native in self._native: 
