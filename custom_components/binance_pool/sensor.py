@@ -51,7 +51,7 @@ ATTR_COIN = "coin"
 
 DATA_BINANCE = "binance_pool_cache"
 
-def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Setup the Binance sensors."""
 
     if discovery_info is None:
@@ -176,7 +176,7 @@ def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
 
     async def async_update(self):
         """Update current values."""
-        await self._binance_data.update()
+        await self._binance_data.async_update()
         for balance in self._binance_data.balances:
             if balance["coin"] == self._coin:
                 
@@ -250,7 +250,7 @@ class BinanceExchangeSensor(SensorEntity):
 
     async def async_update(self):
         """Update current values."""
-        await self._binance_data.update()
+        await self._binance_data.async_update()
         
         symbols = {}
         for coin1 in self._binance_data.balances:
@@ -347,7 +347,7 @@ class BinanceWorkerSensor(SensorEntity):
         
     async def async_update(self):
         """Update current values."""
-        await self._binance_data.update_mining()
+        await self._binance_data.async_update_mining()
 
         exists = False
                 
@@ -445,7 +445,7 @@ class BinanceStatusSensor(SensorEntity):
         
     async def async_update(self):
         """Update current values."""
-        await self._binance_data.update_mining()
+        await self._binance_data.async_update_mining()
 
         exists = False
 

@@ -81,7 +81,7 @@ async def async_setup(hass, config):
                 balance["name"] = name
                 balance["native"] = native_currency
                 balance.pop("networkList", None)
-                hass.async_create_task( async_load_platform(hass, "sensor", DOMAIN, balance, config) )
+                async_load_platform(hass, "sensor", DOMAIN, balance, config)
 
     if not hasattr(binance_data, "tickers"):
         pass
@@ -89,7 +89,7 @@ async def async_setup(hass, config):
         for ticker in binance_data.tickers:
             if not tickers or ticker["symbol"] in tickers:
                 ticker["name"] = name
-                hass.async_create_task( async_load_platform(hass, "sensor", DOMAIN, ticker, config) )                
+                async_load_platform(hass, "sensor", DOMAIN, ticker, config)                
 
     if not hasattr(binance_data, "mining") or "accounts" not in binance_data.mining:
         pass
@@ -103,7 +103,7 @@ async def async_setup(hass, config):
                         worker["name"] = name
                         worker["algorithm"] = algo
                         worker["account"] = account
-                        hass.async_create_task( async_load_platform(hass, "sensor", DOMAIN, worker, config) )                        
+                        async_load_platform(hass, "sensor", DOMAIN, worker, config)                        
                         
                         if worker["status"] == 0:
                             unknown += 1
@@ -154,12 +154,12 @@ async def async_setup(hass, config):
                         else:
                             profit["profitYesterday"] = 0
                           
-                        hass.async_create_task( async_load_platform(hass, "sensor", DOMAIN, profit, config) )                            
+                        async_load_platform(hass, "sensor", DOMAIN, profit, config)                            
                     
                     status.pop("profitToday", None)
                     status.pop("profitYesterday", None)
 
-                    hass.async_create_task( async_load_platform(hass, "sensor", DOMAIN, status, config) )                  
+                    async_load_platform(hass, "sensor", DOMAIN, status, config)                  
                                      
     return True
 
