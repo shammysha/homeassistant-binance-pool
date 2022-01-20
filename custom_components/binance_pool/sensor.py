@@ -582,24 +582,24 @@ class BinanceProfitSensor(SensorEntity):
                                             
                     if coin in estimate:
                         new_estimate = estimate[coin]
-                            
                     else:
                         new_estimate = 0.00
 
-
                     if coin in earnings:
-                        if float(self._earnings) > 0 and float(earnings[coin]) == 0:
-                            if float(self._estimate) > 0 and float(new_estimate) == 0:
-                                new_earnings = self._estimate
-                            else:
-                                new_earnings = self._earnings
+                            new_earnings = earnings[coin]   
+                    
+                    elif float(self._earnings) > 0:
+                        if float(self._estimate) > 0 and new_estimate == 0.00:
+                            new_earnings = self._estimate
+                        else:
+                            new_earnings = self._earnings
                     else:
                         new_earnings = 0.00
-                        new_state = 0.00
-                        
+                       
 
                     self._estimate = new_estimate
                     self._earnings = new_earnings
+                    self._state = float(self._earnings)
 
                     if self._native:
                         for native in self._native: 
