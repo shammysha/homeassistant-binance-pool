@@ -4,7 +4,7 @@
   "documentation": "https://github.com/shammysha/homeassistant-binance-pool",
   "issue_tracker": "https://github.com/shammysha/homeassistant-binance-pool/issues",
   "dependencies": [],
-  "version": "1.3.0",
+  "version": "1.3.1",
   "codeowners": [
     "@shammysha"
   ],

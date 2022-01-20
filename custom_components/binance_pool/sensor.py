@@ -115,7 +115,7 @@ def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
         
         sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], name, account, algorithm, coin, estimate, earnings, native)        
 
-    add_entities([sensor], True)
+    async_add_entities([sensor], True)
 
 class BinanceSensor(SensorEntity):
     """Representation of a Sensor."""
