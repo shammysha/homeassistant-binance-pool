@@ -8,7 +8,7 @@ import voluptuous as vol
 
 from homeassistant.const import CONF_API_KEY, CONF_NAME
 import homeassistant.helpers.config_validation as cv
-from homeassistant.helpers.discovery import async_load_platform, async_create_task
+from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
 __version__ = "1.0.1"
