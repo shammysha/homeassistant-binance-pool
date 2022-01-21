@@ -594,7 +594,7 @@ class BinanceProfitSensor(SensorEntity):
                         if old_estimate > 0:
                             if new_estimate == 0:
                                 new_earnings = old_estimate 
-                        else
+                        else:
                             new_earnings = old_earnings
                         
                     else:
