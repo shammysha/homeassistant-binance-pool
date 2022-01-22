@@ -590,9 +590,9 @@ class BinanceProfitSensor(SensorEntity):
                     if coin in earnings:
                         new_earnings = earnings[coin]   
                     
-                    elif old_earnings > 0: 
-                        if old_estimate > 0:
-                            if new_estimate == 0:
+                    elif float(old_earnings) > 0: 
+                        if float(old_estimate) > 0:
+                            if float(new_estimate) == 0:
                                 new_earnings = old_estimate 
                         else:
                             new_earnings = old_earnings
