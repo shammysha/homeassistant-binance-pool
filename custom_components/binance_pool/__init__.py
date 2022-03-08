@@ -81,6 +81,33 @@ def setup(hass, config):
                 balance["native"] = native_currency
                 balance.pop("networkList", None)
                 load_platform(hass, "sensor", DOMAIN, balance, config)
+                
+                fundExists = False
+                
+                for funding in binance_data.funding:
+                    if funding["asset"] == balance["coin"]:
+                        fundExists = True
+                        
+                        funding["name"] = name
+                        funding["native"] = native_currency                
+                        funding.pop("btcValuation", None)
+                        
+                        load_platform(hass, "sensor", DOMAIN, funding, config)
+                        
+                        break
+                        
+                if not fundExists:
+                    funding = {
+                        "name": name,
+                        "native": native_currency,
+                        "asset": balance["coin"],
+                        "free": "0",
+                        "locked": "0",
+                        "freeze": "0",
+                        "withdrawing": "0",
+                    }
+                        
+                    load_platform(hass, "sensor", DOMAIN, funding, config)
 
     if not hasattr(binance_data, "tickers"):
         pass
@@ -168,6 +195,7 @@ class BinanceData:
         self.client = BinancePoolClient(api_key, api_secret, tld=tld)
         self.coins = {}
         self.balances = []
+        self.funding = []
         self.tickers = {}
         self.mining = {}
         self.tld = tld
@@ -191,6 +219,11 @@ class BinanceData:
                 self.balances = balances
                 _LOGGER.debug(f"Balances updated from binance.{self.tld}")
 
+            funding = self.client.get_funding_balances()
+            if funding:
+                self.funding = funding
+                _LOGGER.debug(f"Funding data from binance.{self.tld}")
+                 
             prices = self.client.get_all_tickers()
             if prices:
                 self.tickers = prices
@@ -333,3 +366,10 @@ class BinancePoolClient(Client):
             https://binance-docs.github.io/apidocs/spot/en/#all-coins-39-information-user_data
         """
         return self._request_capital_api('get', 'config/getall', True, data=params) 
+        
+    def get_funding_balances(self, **params):
+        """ Funding Wallet (USER_DATA)
+        
+            https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
+        """
+        return self._request_mining_api('post', 'asset/get-funding-asset', True, data=params)        
