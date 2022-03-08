@@ -283,8 +283,12 @@ class BinanceFundingSensor(SensorEntity):
     def update(self):
         """Update current values."""
         self._binance_data.update()
+        
+        fundExists = False
+        
         for funding in self._binance_data.funding:
             if funding["asset"] == self._coin:
+                fundExists = True
                 
                 self._total = float(funding["free"]) + float(funding["locked"]) + float(funding["freeze"]) + float(funding["withdrawing"])
                 self._free = funding["free"]
@@ -292,30 +296,38 @@ class BinanceFundingSensor(SensorEntity):
                 self._freeze = funding["freeze"]
                 self._withdrawing = funding["withdrawing"]
                 self._state = self._total
-                
-                if self._native:
-                    for native in self._native:
-                        for ticker in self._binance_data.tickers:
-                    
-                            if ticker["symbol"] == self._coin + native.upper():
-                                self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
-                                self._native_balance["free"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
-                                self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
-                                self._native_balance["freeze"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._freeze))
-                                self._native_balance["withdrawing"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._withdrawing))
-                            
-                                break
-                            
-                            if ticker["symbol"] == native.upper() + self._coin:      
-                                self._native_balance["total"][native] = "{:.8f}".format(float(self._total) / float(ticker["price"]))
-                                self._native_balance["free"][native] = "{:.8f}".format(float(self._free) / float(ticker["price"]))
-                                self._native_balance["locked"][native] = "{:.8f}".format(float(self._locked) / float(ticker["price"]))
-                                self._native_balance["freeze"][native] = "{:.8f}".format(float(self._freeze) / float(ticker["price"]))                                               
-                                self._native_balance["withdrawing"][native] = "{:.8f}".format(float(self._withdrawing) / float(ticker["price"]))
-                            
-                                break
-                break
 
+                break
+        
+        if not fundExists:
+            self._total = 0.00
+            self._free = 0.00
+            self._locked = 0.00
+            self._freeze = 0.00
+            self._withdrawing = 0.00
+            self._state = 0.00        
+                
+        if self._native:
+            for native in self._native:
+                for ticker in self._binance_data.tickers:
+            
+                    if ticker["symbol"] == self._coin + native.upper():
+                        self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
+                        self._native_balance["free"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                        self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                        self._native_balance["freeze"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._freeze))
+                        self._native_balance["withdrawing"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._withdrawing))
+                    
+                        break
+                    
+                    if ticker["symbol"] == native.upper() + self._coin:      
+                        self._native_balance["total"][native] = "{:.8f}".format(float(self._total) / float(ticker["price"]))
+                        self._native_balance["free"][native] = "{:.8f}".format(float(self._free) / float(ticker["price"]))
+                        self._native_balance["locked"][native] = "{:.8f}".format(float(self._locked) / float(ticker["price"]))
+                        self._native_balance["freeze"][native] = "{:.8f}".format(float(self._freeze) / float(ticker["price"]))                                               
+                        self._native_balance["withdrawing"][native] = "{:.8f}".format(float(self._withdrawing) / float(ticker["price"]))
+                    
+                        break
 
 class BinanceExchangeSensor(SensorEntity):
     """Representation of a Sensor."""
