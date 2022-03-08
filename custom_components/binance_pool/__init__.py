@@ -372,4 +372,4 @@ class BinancePoolClient(Client):
         
             https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
         """
-        return self._request_mining_api('post', 'asset/get-funding-asset', True, data=params)        
+        return self._request_capital_api('post', 'asset/get-funding-asset', True, data=params)        
