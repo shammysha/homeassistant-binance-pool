@@ -280,6 +280,9 @@ class BinancePoolClient(Client):
     def _create_capital_api_url(self, path: str, version: str = BALANCES_API_URL ) -> str:
         return self.BALANCES_API_URL.format(self.tld) + '/' + self.BALANCES_API_VERSION + '/capital/' + path
       
+    def _create_capital_api_url(self, path: str, version: str = BALANCES_API_URL ) -> str:
+        return self.BALANCES_API_URL.format(self.tld) + '/' + self.BALANCES_API_VERSION + '/capital/' + path      
+      
     def _request_mining_api(self, method, path, signed=False, **kwargs):
         uri = self._create_mining_api_url(path)
         
@@ -372,4 +375,4 @@ class BinancePoolClient(Client):
         
             https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
         """
-        return self._request_mining_api('post', 'asset/get-funding-asset', True, data=params)        
+        return self._request_margin_api('post', 'asset/get-funding-asset', True, data=params)        

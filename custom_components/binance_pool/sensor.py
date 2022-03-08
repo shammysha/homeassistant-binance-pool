@@ -284,7 +284,7 @@ class BinanceFundingSensor(SensorEntity):
         """Update current values."""
         self._binance_data.update()
         for funding in self._binance_data.funding:
-            if funding["coin"] == self._coin:
+            if funding["asset"] == self._coin:
                 
                 self._total = float(funding["free"]) + float(funding["locked"]) + float(funding["freeze"]) + float(funding["withdrawing"])
                 self._free = funding["free"]
