@@ -62,6 +62,9 @@ This configuration will create the following entities in your Home Assistant ins
 - My Binance USD Balance (`sensor.my_binance_usd_balance`)
 - My Binance BTC Balance (`sensor.my_binance_btc_balance`)
 - My Binance ETH Balance (`sensor.my_binance_eth_balance`)
+- My Binance USD Funding Balance (`sensor.my_binance_usd_funding`)
+- My Binance BTC Funding Balance (`sensor.my_binance_btc_funding`)
+- My Binance ETH Funding Balance (`sensor.my_binance_eth_funding`)
 - My Binance BTCUSD Exchange (`sensor.my_binance_btcusd_exchange`)
 - My Binance ETHUSD Exchange (`sensor.my_binance_ethusd_exchange`)
 - Earnings sensors for each bundle (account + algo + coin), as example:
