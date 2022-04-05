@@ -71,7 +71,7 @@ async def async_setup(hass, config):
     native_currency = config[DOMAIN].get(CONF_NATIVE_CURRENCY)
     tld = config[DOMAIN].get(CONF_DOMAIN)
 
-    hass.data[DATA_BINANCE] = binance_data = BinanceData(hass, api_key, api_secret, tld, miners)
+    hass.data[DATA_BINANCE] = binance_data = BinanceData(api_key, api_secret, tld, miners)
 
     if not hasattr(binance_data, "balances"):
         pass
@@ -82,6 +82,33 @@ async def async_setup(hass, config):
                 balance["native"] = native_currency
                 balance.pop("networkList", None)
                 async_load_platform(hass, "sensor", DOMAIN, balance, config)
+
+                fundExists = False
+                
+                for funding in binance_data.funding:
+                    if funding["asset"] == balance["coin"]:
+                        fundExists = True
+                        
+                        funding["name"] = name
+                        funding["native"] = native_currency                
+                        funding.pop("btcValuation", None)
+                        
+                        async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                        
+                        break
+                        
+                if not fundExists:
+                    funding = {
+                        "name": name,
+                        "native": native_currency,
+                        "asset": balance["coin"],
+                        "free": "0",
+                        "locked": "0",
+                        "freeze": "0",
+                        "withdrawing": "0",
+                    }
+                        
+                    async_load_platform(hass, "sensor", DOMAIN, funding, config)
 
     if not hasattr(binance_data, "tickers"):
         pass
@@ -165,36 +192,39 @@ async def async_setup(hass, config):
 
 
 class BinanceData:
-    def __init__(self, hass, api_key, api_secret, tld, miners = []):
+    def __init__(self, api_key, api_secret, tld, miners = []):
         """Initialize."""
         self.client = BinancePoolClient(api_key, api_secret, tld=tld)
         self.coins = {}
         self.balances = []
+        self.funding = []
         self.tickers = {}
         self.mining = {}
         self.tld = tld
         
-        future = asyncio.run_coroutine_threadsafe( self.async_update(), hass.loop )
+        await self.async_update()
         
         if miners: 
             self.mining = { "accounts": {} }
             for account in miners:
                 self.mining["accounts"] = { account: {} }
                 
-            miningFuture = asyncio.run_coroutine_threadsafe( self.async_update_mining(), hass.loop )
-        
-        data = future.result()
-        miningdata = miningFuture.result()
+            await self.async_update_mining()
         
         
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     async def async_update(self):
         _LOGGER.debug(f"Fetching data from binance.{self.tld}")
         try:
-            balances = await self.client.get_capital_balances()
+            balances = await self.client.async_get_capital_balances()
             if balances:
                 self.balances = balances
                 _LOGGER.debug(f"Balances updated from binance.{self.tld}")
+
+            funding = await self.client.async_get_funding_balances()
+            if funding:
+                self.funding = funding
+                _LOGGER.debug(f"Funding data updated from binance.{self.tld}")
 
             prices = await self.client.get_all_tickers()
             if prices:
@@ -219,24 +249,18 @@ class BinanceData:
                     if algos:
                         for algo in algos:
                             algoname = algo["algoName"].lower()
-                            futures = { "mining": {}, "status": {} };
                                                
                             for account, algorithm in self.mining["accounts"].items():
                                 if algoname not in algorithm:
                                     self.mining["accounts"][account][algoname] = {}
                                 
-                                futures[account]["mining"] = asyncio.run_coroutine_threadsafe( self.client.async_get_mining_worker_list(algo=algoname, userName=account), hass.loop)
-                                futures[account]["status"] = asyncio.run_coroutine_threadsafe( self.client.async_get_mining_status(algo=algoname, userName=account), hass.loop)    
-                            
-                            
-                            for account, future in futures.items():
-                                workers_info = future["mining"].result()
-                                workers_list = workers_info.get("workerDatas", [])
+                                miner_list = await self.client.async_get_mining_worker_list(algo=algoname, userName=account)
+                                workers_list = miner_list.get("workerDatas", [])
                                 if workers_list:
                                     self.mining["accounts"][account][algoname].update({ "workers": workers_list })
                                     _LOGGER.debug(f"Mining workers updated for {account} ({algoname}) from binance.{self.tld}")
     
-                                status_info = future["status"].result()
+                                status_info = await self.client.async_get_mining_status(algo=algoname, userName=account)
                                 if status_info:
                                     self.mining["accounts"][account][algoname].update({ "status": status_info })
                                     _LOGGER.debug(f"Mining status updated for {account} ({algoname}) from binance.{self.tld}")                               
@@ -344,3 +368,10 @@ class BinancePoolClient(AsyncClient):
             https://binance-docs.github.io/apidocs/spot/en/#all-coins-39-information-user_data
         """
         return await self._request_capital_api('get', 'config/getall', True, data=params) 
+        
+    async def async_get_funding_balances(self, **params):
+        """ Funding Wallet (USER_DATA)
+        
+            https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
+        """
+        return await self._request_margin_api('post', 'asset/get-funding-asset', True, data=params)         

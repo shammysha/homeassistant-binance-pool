@@ -24,6 +24,7 @@ ATTRIBUTION = "Data provided by Binance"
 ATTR_FREE = "free"
 ATTR_LOCKED = "locked"
 ATTR_FREEZE = "freeze"
+ATTR_WITHDRAW = "withdrawing"
 ATTR_TOTAL = "total"
 ATTR_NATIVE_BALANCE = "native balance"
 
@@ -68,7 +69,20 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         sensor = BinanceSensor(
             hass.data[DATA_BINANCE], name, coin, free, locked, freeze, native
         )
+        
+    elif all(i in discovery_info for i in ["name", "asset", "free", "locked", "freeze", "withdrawing", "native"]):
+        name = discovery_info["name"]
+        coin = discovery_info["asset"]
+        free = discovery_info["free"]
+        locked = discovery_info["locked"]
+        freeze = discovery_info["freeze"]
+        native = discovery_info["native"]
+        withdrawing = discovery_info["withdrawing"]
 
+        sensor = BinanceFundingSensor(
+            hass.data[DATA_BINANCE], name, coin, free, locked, freeze, withdrawing, native
+        )
+        
     elif all(i in discovery_info for i in ["name", "symbol", "price"]):
         name = discovery_info["name"]
         symbol = discovery_info["symbol"]
@@ -207,6 +221,113 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                                 break
                 break
 
+class BinanceFundingSensor(SensorEntity):
+    """Representation of a Sensor."""
+
+    def __init__(self, binance_data, name, coin, free, locked, freeze, withdrawing, native = []):
+        """Initialize the sensor."""
+        self._binance_data = binance_data
+        self._name = f"{name} {coin} Funding"
+        self._coin = coin
+        self._free = free
+        self._locked = locked
+        self._freeze = freeze
+        self._withdrawing = withdrawing
+        self._native = native
+        self._unit_of_measurement = coin
+        self._total = float(free) + float(locked) + float(freeze)
+        self._state = None
+        self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {}, "withdrawing": {} }
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+
+        return self._state
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement this sensor expresses itself in."""
+        return self._unit_of_measurement
+
+    @property
+    def icon(self):
+        """Icon to use in the frontend, if any."""
+
+        return CURRENCY_ICONS.get(self._coin, "mdi:currency-" + self._coin.lower())
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes of the sensor."""
+
+        data = {
+            ATTR_ATTRIBUTION: ATTRIBUTION,
+            ATTR_FREE: "{:.8f}".format(float(self._free)),
+            ATTR_LOCKED: "{:.8f}".format(float(self._locked)),
+            ATTR_FREEZE: "{:.8f}".format(float(self._freeze)),    
+            ATTR_WITHDRAW: "{:.8f}".format(float(self._withdrawing)),                    
+            ATTR_TOTAL: "{:.8f}".format(float(self._total)),
+        }
+        
+        for type, native in self._native_balance.items():
+            for asset, exchange in native.items(): 
+                data[f"Native {type} funding in {asset}"] = exchange
+         
+        return data
+
+    async def async_update(self):
+        """Update current values."""
+        await self._binance_data.async_update()
+        
+        fundExists = False
+        
+        for funding in self._binance_data.funding:
+            if funding["asset"] == self._coin:
+                fundExists = True
+                
+                self._total = float(funding["free"]) + float(funding["locked"]) + float(funding["freeze"]) + float(funding["withdrawing"])
+                self._free = funding["free"]
+                self._locked = funding["locked"]
+                self._freeze = funding["freeze"]
+                self._withdrawing = funding["withdrawing"]
+                self._state = self._total
+
+                break
+        
+        if not fundExists:
+            self._total = 0.00
+            self._free = 0.00
+            self._locked = 0.00
+            self._freeze = 0.00
+            self._withdrawing = 0.00
+            self._state = 0.00        
+                
+        if self._native:
+            for native in self._native:
+                for ticker in self._binance_data.tickers:
+            
+                    if ticker["symbol"] == self._coin + native.upper():
+                        self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
+                        self._native_balance["free"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                        self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                        self._native_balance["freeze"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._freeze))
+                        self._native_balance["withdrawing"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._withdrawing))
+                    
+                        break
+                    
+                    if ticker["symbol"] == native.upper() + self._coin:      
+                        self._native_balance["total"][native] = "{:.8f}".format(float(self._total) / float(ticker["price"]))
+                        self._native_balance["free"][native] = "{:.8f}".format(float(self._free) / float(ticker["price"]))
+                        self._native_balance["locked"][native] = "{:.8f}".format(float(self._locked) / float(ticker["price"]))
+                        self._native_balance["freeze"][native] = "{:.8f}".format(float(self._freeze) / float(ticker["price"]))                                               
+                        self._native_balance["withdrawing"][native] = "{:.8f}".format(float(self._withdrawing) / float(ticker["price"]))
+                    
+                        break
 
 class BinanceExchangeSensor(SensorEntity):
     """Representation of a Sensor."""
