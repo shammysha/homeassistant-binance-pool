@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.8"
+__version__ = "1.3.9"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -87,7 +87,7 @@ async def async_setup(hass, config):
                 balance["name"] = name
                 balance["native"] = native_currency
                 balance.pop("networkList", None)
-                async_load_platform(hass, "sensor", DOMAIN, balance, config)
+                await async_load_platform(hass, "sensor", DOMAIN, balance, config)
 
                 fundExists = False
                 
@@ -99,7 +99,7 @@ async def async_setup(hass, config):
                         funding["native"] = native_currency                
                         funding.pop("btcValuation", None)
                         
-                        async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                        await async_load_platform(hass, "sensor", DOMAIN, funding, config)
                         
                         break
                         
@@ -114,7 +114,7 @@ async def async_setup(hass, config):
                         "withdrawing": "0",
                     }
                         
-                    async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                    await async_load_platform(hass, "sensor", DOMAIN, funding, config)
 
     if not hasattr(binance_data, "tickers"):
         pass
@@ -122,7 +122,7 @@ async def async_setup(hass, config):
         for ticker in binance_data.tickers:
             if not tickers or ticker["symbol"] in tickers:
                 ticker["name"] = name
-                async_load_platform(hass, "sensor", DOMAIN, ticker, config)                
+                await async_load_platform(hass, "sensor", DOMAIN, ticker, config)                
 
     if not hasattr(binance_data, "mining") or "accounts" not in binance_data.mining:
         pass
@@ -136,7 +136,7 @@ async def async_setup(hass, config):
                         worker["name"] = name
                         worker["algorithm"] = algo
                         worker["account"] = account
-                        async_load_platform(hass, "sensor", DOMAIN, worker, config)                        
+                        await async_load_platform(hass, "sensor", DOMAIN, worker, config)                        
                         
                         if worker["status"] == 0:
                             unknown += 1
@@ -187,12 +187,12 @@ async def async_setup(hass, config):
                         else:
                             profit["profitYesterday"] = 0
                           
-                        async_load_platform(hass, "sensor", DOMAIN, profit, config)                            
+                        await async_load_platform(hass, "sensor", DOMAIN, profit, config)                            
                     
                     status.pop("profitToday", None)
                     status.pop("profitYesterday", None)
 
-                    async_load_platform(hass, "sensor", DOMAIN, status, config)                  
+                    await async_load_platform(hass, "sensor", DOMAIN, status, config)                  
                                      
     return True
 
