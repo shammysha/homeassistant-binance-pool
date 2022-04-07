@@ -675,7 +675,7 @@ class BinanceProfitSensor(SensorEntity):
         
     async def async_update(self):
         """Update current values."""
-        await self._binance_data.update_mining()
+        await self._binance_data.async_update_mining()
 
         exists = False
                 

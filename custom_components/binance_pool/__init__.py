@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.9"
+__version__ = "1.3.10"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
