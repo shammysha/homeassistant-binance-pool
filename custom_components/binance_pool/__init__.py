@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.7"
+__version__ = "1.3.8"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -306,7 +306,7 @@ class BinancePoolClient(AsyncClient):
             https://binance-docs.github.io/apidocs/spot/en/#acquiring-algorithm-market_data
             
         """
-        return await self._request_mining_api('get', 'pub/algoList')
+        return await self.async_request_mining_api('get', 'pub/algoList')
 
 
     async def async_get_mining_coinlist(self):
@@ -314,7 +314,7 @@ class BinancePoolClient(AsyncClient):
         
             https://binance-docs.github.io/apidocs/spot/en/#acquiring-coinname-market_data
         """
-        return await self._request_mining_api('get', 'pub/coinList')        
+        return await self.async_request_mining_api('get', 'pub/coinList')        
 
 
     async def async_get_mining_worker_detail(self, **params):
@@ -322,7 +322,7 @@ class BinancePoolClient(AsyncClient):
 
             https://binance-docs.github.io/apidocs/spot/en/#request-for-detail-miner-list-user_data
         """
-        return await self._request_mining_api('get', 'worker/detail', True, data=params)        
+        return await self.async_request_mining_api('get', 'worker/detail', True, data=params)        
         
 
     async def async_get_mining_worker_list(self, **params):
@@ -330,7 +330,7 @@ class BinancePoolClient(AsyncClient):
 
             https://binance-docs.github.io/apidocs/spot/en/#earnings-list-user_data
         """
-        return await self._request_mining_api('get', 'worker/list', True, data=params)        
+        return await self.async_request_mining_api('get', 'worker/list', True, data=params)        
         
     
     async def async_get_mining_earning_history(self, **params):
@@ -338,7 +338,7 @@ class BinancePoolClient(AsyncClient):
 
             https://binance-docs.github.io/apidocs/spot/en/#earnings-list-user_data
         """
-        return await self._request_mining_api('get', 'payment/list', True, data=params)      
+        return await self.async_request_mining_api('get', 'payment/list', True, data=params)      
 
 
     async def async_get_mining_bonus_history(self, **params):
@@ -346,7 +346,7 @@ class BinancePoolClient(AsyncClient):
 
             https://binance-docs.github.io/apidocs/spot/en/#extra-bonus-list-user_data
         """
-        return await self._request_mining_api('get', 'payment/other', True, data=params) 
+        return await self.async_request_mining_api('get', 'payment/other', True, data=params) 
 
 
     async def async_get_mining_status(self, **params):
@@ -354,7 +354,7 @@ class BinancePoolClient(AsyncClient):
 
             https://binance-docs.github.io/apidocs/spot/en/#statistic-list-user_data
         """
-        return await self._request_mining_api('get', 'statistics/user/status', True, data=params) 
+        return await self.async_request_mining_api('get', 'statistics/user/status', True, data=params) 
 
         
     async def async_get_mining_history(self, **params):
@@ -362,14 +362,14 @@ class BinancePoolClient(AsyncClient):
 
             https://binance-docs.github.io/apidocs/spot/en/#account-list-user_data
         """
-        return await self._request_mining_api('get', 'statistics/user/list', True, data=params)           
+        return await self.async_request_mining_api('get', 'statistics/user/list', True, data=params)           
 
     async def async_get_capital_balances(self, **params):
         """ All Coins' Information (USER_DATA)
 
             https://binance-docs.github.io/apidocs/spot/en/#all-coins-39-information-user_data
         """
-        return await self._request_capital_api('get', 'config/getall', True, data=params) 
+        return await self.async_request_capital_api('get', 'config/getall', True, data=params) 
         
     async def async_get_funding_balances(self, **params):
         """ Funding Wallet (USER_DATA)
