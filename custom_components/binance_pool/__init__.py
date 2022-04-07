@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.6"
+__version__ = "1.3.7"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -71,8 +71,14 @@ async def async_setup(hass, config):
     native_currency = config[DOMAIN].get(CONF_NATIVE_CURRENCY)
     tld = config[DOMAIN].get(CONF_DOMAIN)
 
-    hass.data[DATA_BINANCE] = binance_data = BinanceData(api_key, api_secret, tld, miners)
+    binance_data = BinanceData(api_key, api_secret, tld, miners)
+    
+    await binance_data.async_update();
+    if miners:
+        await binance_data.async_update_mining()
 
+    hass.data[DATA_BINANCE] = binance_data
+     
     if not hasattr(binance_data, "balances"):
         pass
     else:
@@ -202,14 +208,10 @@ class BinanceData:
         self.mining = {}
         self.tld = tld
         
-        await self.async_update()
-        
         if miners: 
             self.mining = { "accounts": {} }
             for account in miners:
                 self.mining["accounts"] = { account: {} }
-                
-            await self.async_update_mining()
         
         
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
