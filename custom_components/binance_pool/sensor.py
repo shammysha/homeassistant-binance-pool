@@ -696,6 +696,8 @@ class BinanceProfitSensor(SensorEntity):
                     estimate = type["status"].get("profitToday", {})
                     earnings = type["status"].get("profitYesterday", {})
 
+                    old_estimate = self._estimate
+                    old_earnings = self._earnings
                     new_estimate = 0.00
                     new_earnings = 0.00
                                             
@@ -707,13 +709,14 @@ class BinanceProfitSensor(SensorEntity):
                         new_estimate = 0.00
 
                     if coin in earnings:
-                            new_earnings = earnings[coin]   
+                        new_earnings = earnings[coin]   
                     
-                    elif float(self._earnings) > 0:
-                        if float(self._estimate) > 0 and new_estimate == 0.00:
-                            new_earnings = self._estimate
-                        else:
-                            new_earnings = self._earnings
+                    elif float(old_earnings) > 0: 
+                        new_earnings = old_earnings
+                        
+                        if float(old_estimate) > 0 and float(new_estimate) == 0:
+                            new_earnings = old_estimate
+                        
                     else:
                         new_earnings = 0.00
                        
@@ -734,14 +737,6 @@ class BinanceProfitSensor(SensorEntity):
                                     self._native_estimate[native] = "{:.8f}".format(float(self._estimate) / float(ticker["price"]))
                             
                                     break 
-                    
-                    if coin in earnings:
-                        self._earnings = earnings[coin]
-                        self._state = float(earnings[coin])
-                          
-                    else:
-                        self._earnings = 0.00
-                        self._state = 0.00
 
                     if self._native:
                           for native in self._native: 
@@ -765,4 +760,4 @@ class BinanceProfitSensor(SensorEntity):
                 break
                             
         if not exists:
-            self._state = None             
+            self._state = None           
