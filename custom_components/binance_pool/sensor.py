@@ -52,7 +52,7 @@ ATTR_COIN = "coin"
 
 DATA_BINANCE = "binance_pool_cache"
 
-def setup_platform(hass, config, add_entities, discovery_info=None):
+async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Setup the Binance sensors."""
 
     if discovery_info is None:
@@ -69,7 +69,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         sensor = BinanceSensor(
             hass.data[DATA_BINANCE], name, coin, free, locked, freeze, native
         )
-
+        
     elif all(i in discovery_info for i in ["name", "asset", "free", "locked", "freeze", "withdrawing", "native"]):
         name = discovery_info["name"]
         coin = discovery_info["asset"]
@@ -82,7 +82,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         sensor = BinanceFundingSensor(
             hass.data[DATA_BINANCE], name, coin, free, locked, freeze, withdrawing, native
         )
-
+        
     elif all(i in discovery_info for i in ["name", "symbol", "price"]):
         name = discovery_info["name"]
         symbol = discovery_info["symbol"]
@@ -129,7 +129,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
         
         sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], name, account, algorithm, coin, estimate, earnings, native)        
 
-    add_entities([sensor], True)
+    async_add_entities([sensor], True)
 
 class BinanceSensor(SensorEntity):
     """Representation of a Sensor."""
@@ -188,9 +188,9 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
          
         return data
 
-    def update(self):
+    async def async_update(self):
         """Update current values."""
-        self._binance_data.update()
+        await self._binance_data.async_update()
         for balance in self._binance_data.balances:
             if balance["coin"] == self._coin:
                 
@@ -280,9 +280,9 @@ class BinanceFundingSensor(SensorEntity):
          
         return data
 
-    def update(self):
+    async def async_update(self):
         """Update current values."""
-        self._binance_data.update()
+        await self._binance_data.async_update()
         
         fundExists = False
         
@@ -369,9 +369,9 @@ class BinanceExchangeSensor(SensorEntity):
             ATTR_ATTRIBUTION: ATTRIBUTION,
         }
 
-    def update(self):
+    async def async_update(self):
         """Update current values."""
-        self._binance_data.update()
+        await self._binance_data.async_update()
         
         symbols = {}
         for coin1 in self._binance_data.balances:
@@ -466,9 +466,9 @@ class BinanceWorkerSensor(SensorEntity):
         return data
         
         
-    def update(self):
+    async def async_update(self):
         """Update current values."""
-        self._binance_data.update_mining()
+        await self._binance_data.async_update_mining()
 
         exists = False
                 
@@ -564,9 +564,9 @@ class BinanceStatusSensor(SensorEntity):
         }
         
         
-    def update(self):
+    async def async_update(self):
         """Update current values."""
-        self._binance_data.update_mining()
+        await self._binance_data.async_update_mining()
 
         exists = False
 
@@ -673,9 +673,9 @@ class BinanceProfitSensor(SensorEntity):
         return data
         
         
-    def update(self):
+    async def async_update(self):
         """Update current values."""
-        self._binance_data.update_mining()
+        await self._binance_data.async_update_mining()
 
         exists = False
                 
@@ -760,4 +760,4 @@ class BinanceProfitSensor(SensorEntity):
                 break
                             
         if not exists:
-            self._state = None             
+            self._state = None           
