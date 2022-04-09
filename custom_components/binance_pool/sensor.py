@@ -696,11 +696,14 @@ class BinanceProfitSensor(SensorEntity):
                 if algo != self._algorithm or "status" not in type:
                     continue
                 
+                
                 for coindata in self._binance_data.coins:
                     coin = coindata["coinName"]
                     
                     if coin != self._coin:
                         continue
+
+                    _LOGGER.debug(f"Update type: {type}")                        
 
                     estimate = type["status"].get("profitToday", {})
                     earnings = type["status"].get("profitYesterday", {})
