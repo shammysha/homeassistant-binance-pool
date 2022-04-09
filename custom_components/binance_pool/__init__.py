@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.11"
+__version__ = "1.3.12"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -169,6 +169,9 @@ async def async_setup(hass, config):
                         estimate = status.get("profitToday", {})
                         earnings = status.get("profitYesterday", {})
                         
+                        _LOGGER.debug(f"Init Estimate: {estimate}")                        
+                        _LOGGER.debug(f"Init Earnings: {earnings}")
+                        
                         profit = {
                             "name": name, 
                             "algorithm": algo,
@@ -186,6 +189,8 @@ async def async_setup(hass, config):
                             profit["profitYesterday"] = earnings[coin]
                         else:
                             profit["profitYesterday"] = 0
+                          
+                        _LOGGER.debug(f"Init Profit: {profit}")                          
                           
                         await async_load_platform(hass, "sensor", DOMAIN, profit, config)                            
                     
