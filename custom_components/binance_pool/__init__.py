@@ -11,7 +11,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.11"
+__version__ = "1.3.15"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -187,11 +187,10 @@ async def async_setup(hass, config):
                         else:
                             profit["profitYesterday"] = 0
                           
+                        _LOGGER.debug(f"Init Profit: {profit}")                          
+                          
                         await async_load_platform(hass, "sensor", DOMAIN, profit, config)                            
                     
-                    status.pop("profitToday", None)
-                    status.pop("profitYesterday", None)
-
                     await async_load_platform(hass, "sensor", DOMAIN, status, config)                  
                                      
     return True
@@ -257,15 +256,16 @@ class BinanceData:
                                     self.mining["accounts"][account][algoname] = {}
                                 
                                 miner_list = await self.client.async_get_mining_worker_list(algo=algoname, userName=account)
-                                workers_list = miner_list.get("workerDatas", [])
-                                if workers_list:
-                                    self.mining["accounts"][account][algoname].update({ "workers": workers_list })
-                                    _LOGGER.debug(f"Mining workers updated for {account} ({algoname}) from binance.{self.tld}")
-    
-                                status_info = await self.client.async_get_mining_status(algo=algoname, userName=account)
-                                if status_info:
-                                    self.mining["accounts"][account][algoname].update({ "status": status_info })
-                                    _LOGGER.debug(f"Mining status updated for {account} ({algoname}) from binance.{self.tld}")                               
+                                if miner_list:
+                                    workers_list = miner_list.get("workerDatas", [])
+                                    if workers_list:
+                                        self.mining["accounts"][account][algoname].update({ "workers": workers_list })
+                                        _LOGGER.debug(f"Mining workers updated for {account} ({algoname}) from binance.{self.tld}")
+        
+                                    status_info = await self.client.async_get_mining_status(algo=algoname, userName=account)
+                                    if status_info:
+                                        self.mining["accounts"][account][algoname].update({ "status": status_info })
+                                        _LOGGER.debug(f"Mining status updated for {account} ({algoname}) from binance.{self.tld}")                               
                     
                                       
         except (BinanceAPIException, BinanceRequestException) as e:

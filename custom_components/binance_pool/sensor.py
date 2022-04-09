@@ -687,6 +687,7 @@ class BinanceProfitSensor(SensorEntity):
                 if algo != self._algorithm or "status" not in type:
                     continue
                 
+                
                 for coindata in self._binance_data.coins:
                     coin = coindata["coinName"]
                     
