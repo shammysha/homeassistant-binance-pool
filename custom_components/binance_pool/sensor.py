@@ -2,7 +2,6 @@
 Binance sensor
 """
 from datetime import datetime, timezone
-import logging
 
 from homeassistant.const import ATTR_ATTRIBUTION
 from homeassistant.components.sensor import SensorEntity
@@ -52,8 +51,6 @@ ATTR_ALGO = "algorithm"
 ATTR_COIN = "coin"
 
 DATA_BINANCE = "binance_pool_cache"
-
-_LOGGER = logging.getLogger(__name__)
 
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Setup the Binance sensors."""
@@ -129,9 +126,6 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         estimate = discovery_info["profitToday"]
         earnings = discovery_info["profitYesterday"]
         native = discovery_info["native"]
-        
-        _LOGGER.debug(f"Setup Estimate: {estimate}")                        
-        _LOGGER.debug(f"Setup Earnings: {earnings}")        
         
         sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], name, account, algorithm, coin, estimate, earnings, native)        
 
@@ -634,9 +628,6 @@ class BinanceProfitSensor(SensorEntity):
         self._native_earnings = {}
         self._native_estimate = {}
         
-        _LOGGER.debug(f"Self Estimate: {self._estimate}")                        
-        _LOGGER.debug(f"Self Earnings: {self._earnings}")           
-        
     @property
     def name(self):
         """Return the name of the sensor."""
@@ -703,17 +694,8 @@ class BinanceProfitSensor(SensorEntity):
                     if coin != self._coin:
                         continue
 
-                    _LOGGER.debug(f"Update type: {type}")                        
-
                     estimate = type["status"].get("profitToday", {})
                     earnings = type["status"].get("profitYesterday", {})
-
-                    _LOGGER.debug(f"Update Self Estimate: {self._estimate}")                        
-                    _LOGGER.debug(f"Update Self Earnings: {self._earnings}")  
-                    
-                    _LOGGER.debug(f"Update Estimate: {estimate}")                        
-                    _LOGGER.debug(f"Update Earnings: {earnings}")                    
-
 
                     old_estimate = self._estimate
                     old_earnings = self._earnings
