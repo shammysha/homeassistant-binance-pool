@@ -53,6 +53,8 @@ ATTR_COIN = "coin"
 
 DATA_BINANCE = "binance_pool_cache"
 
+_LOGGER = logging.getLogger(__name__)
+
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Setup the Binance sensors."""
 
