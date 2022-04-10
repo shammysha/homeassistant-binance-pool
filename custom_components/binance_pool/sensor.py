@@ -203,13 +203,12 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 if self._native:
                     for native in self._native:
                         for ticker in self._binance_data.tickers:
-                    
                             if ticker["symbol"] == self._coin + native.upper():
                                 self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
                                 self._native_balance["free"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
-                                self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                                self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._locked))
                                 self._native_balance["freeze"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._freeze))
-                            
+
                                 break
                             
                             if ticker["symbol"] == native.upper() + self._coin:      
@@ -314,7 +313,7 @@ class BinanceFundingSensor(SensorEntity):
                     if ticker["symbol"] == self._coin + native.upper():
                         self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
                         self._native_balance["free"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
-                        self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
+                        self._native_balance["locked"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._locked))
                         self._native_balance["freeze"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._freeze))
                         self._native_balance["withdrawing"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._withdrawing))
                     

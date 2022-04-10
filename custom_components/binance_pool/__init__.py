@@ -1,6 +1,7 @@
 from datetime import timedelta
 import logging
 import asyncio
+import copy
 
 from binance.client import AsyncClient
 from binance.exceptions import BinanceAPIException, BinanceRequestException
@@ -11,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.15"
+__version__ = "1.3.16"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -146,7 +147,7 @@ async def async_setup(hass, config):
                             inactive += 1    
                         
                 if "status" in type:
-                    status = type["status"]
+                    status = copy.deepcopy(type["status"])
                     status["name"] = name
                     status["algorithm"] = algo
                     status["account"] = account
@@ -187,10 +188,11 @@ async def async_setup(hass, config):
                         else:
                             profit["profitYesterday"] = 0
                           
-                        _LOGGER.debug(f"Init Profit: {profit}")                          
-                          
                         await async_load_platform(hass, "sensor", DOMAIN, profit, config)                            
                     
+                    status.pop("profitToday", None)
+                    status.pop("profitYesterday", None)
+
                     await async_load_platform(hass, "sensor", DOMAIN, status, config)                  
                                      
     return True
