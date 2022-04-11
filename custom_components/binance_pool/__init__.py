@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.18"
+__version__ = "1.3.19"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -283,7 +283,7 @@ class BinancePoolClient(AsyncClient):
     
     def _get_request_kwargs(self, method, signed: bool, force_params: bool = False, **kwargs):
         if signed:
-            kwargs['recvWindow'] = self.RECV_WINDOW
+            kwargs['data']['recvWindow'] = self.RECV_WINDOW
             
         return super()._get_request_kwargs(method, signed, force_params, **kwargs)
     
