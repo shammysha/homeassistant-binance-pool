@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.16"
+__version__ = "1.3.17"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -279,6 +279,14 @@ class BinancePoolClient(AsyncClient):
     BALANCES_API_URL = 'https://api.binance.{}/sapi'
     MINING_API_VERSION = 'v1'
     BALANCES_API_VERSION = 'v1'
+    RECV_WINDOW = 50000
+    
+    def _get_request_kwargs(self, method, signed: bool, force_params: bool = False, **kwargs) -> Dict:
+        kwargs = super()._get_request_kwargs(method, signed, force_params, **kwargs)
+        if 'timestamp' in kwargs:
+            kwargs['recvWindow'] = self.RECV_WINDOW
+            
+        return kwargs
     
     def _create_mining_api_url(self, path: str, version: str = MINING_API_URL ) -> str:
         return self.MINING_API_URL.format(self.tld) + '/' + self.MINING_API_VERSION + '/mining/' + path        
