@@ -282,11 +282,10 @@ class BinancePoolClient(AsyncClient):
     RECV_WINDOW = 50000
     
     def _get_request_kwargs(self, method, signed: bool, force_params: bool = False, **kwargs) -> Dict:
-        kwargs = super()._get_request_kwargs(method, signed, force_params, **kwargs)
-        if 'timestamp' in kwargs:
+        if signed:
             kwargs['recvWindow'] = self.RECV_WINDOW
             
-        return kwargs
+        return super()._get_request_kwargs(method, signed, force_params, **kwargs)
     
     def _create_mining_api_url(self, path: str, version: str = MINING_API_URL ) -> str:
         return self.MINING_API_URL.format(self.tld) + '/' + self.MINING_API_VERSION + '/mining/' + path        
