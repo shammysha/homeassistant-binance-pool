@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.3.19"
+__version__ = "1.4.1"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -103,7 +103,7 @@ async def async_setup(hass, config):
                         await async_load_platform(hass, "sensor", DOMAIN, funding, config)
                         
                         break
-                        
+
                 if not fundExists:
                     funding = {
                         "name": name,
@@ -116,6 +116,29 @@ async def async_setup(hass, config):
                     }
                         
                     await async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                    
+        saving = {
+            'name': name,
+            'native': native_currency,
+            'coin': 'USDT',
+            'total': binance_data.savings['totalAmountInUSDT'],
+            'fixed': binance_data.savings['totalFixedAmountInUSDT'],
+            'flexible': binance_data.savings['totalFlexibleInUSDT'],
+        }
+            
+        await async_load_platform(hass, "sensor", DOMAIN, saving, config)                    
+
+        saving = {
+            'name': name,
+            'native': native_currency,
+            'coin': 'BTC',
+            'total': binance_data.savings['totalAmountInBTC'],
+            'fixed': binance_data.savings['totalFixedAmountInBTC'],
+            'flexible': binance_data.savings['totalFlexibleInBTC'],
+        }
+            
+        await async_load_platform(hass, "sensor", DOMAIN, saving, config)
+                    
 
     if not hasattr(binance_data, "tickers"):
         pass
@@ -205,6 +228,7 @@ class BinanceData:
         self.coins = {}
         self.balances = []
         self.funding = []
+        self.savings = {}
         self.tickers = {}
         self.mining = {}
         self.tld = tld
@@ -228,6 +252,14 @@ class BinanceData:
             if funding:
                 self.funding = funding
                 _LOGGER.debug(f"Funding data updated from binance.{self.tld}")
+
+
+            savings = await self.client.get_lending_account()
+            if savings:
+                savings.pop("positionAmountVos", None)
+                
+                self.savings = savings
+                _LOGGER.debug(f"Savings data updated from binance.{self.tld}")
 
             prices = await self.client.get_all_tickers()
             if prices:
@@ -292,7 +324,7 @@ class BinancePoolClient(AsyncClient):
 
     def _create_capital_api_url(self, path: str, version: str = BALANCES_API_URL ) -> str:
         return self.BALANCES_API_URL.format(self.tld) + '/' + self.BALANCES_API_VERSION + '/capital/' + path
-      
+        
     async def async_request_mining_api(self, method, path, signed=False, **kwargs):
         uri = self._create_mining_api_url(path)
         
@@ -385,4 +417,5 @@ class BinancePoolClient(AsyncClient):
         
             https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
         """
-        return await self._request_margin_api('post', 'asset/get-funding-asset', True, data=params)         
+        return await self._request_margin_api('post', 'asset/get-funding-asset', True, data=params) 
+        

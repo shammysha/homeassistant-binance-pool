@@ -27,6 +27,8 @@ ATTR_FREEZE = "freeze"
 ATTR_WITHDRAW = "withdrawing"
 ATTR_TOTAL = "total"
 ATTR_NATIVE_BALANCE = "native balance"
+ATTR_FLEXIBLE = "flexible"
+ATTR_FIXED = "fixed"
 
 ATTR_WORKER_STATUS = "status"
 ATTR_WORKER_HRATE = "hashrate"
@@ -82,6 +84,18 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         sensor = BinanceFundingSensor(
             hass.data[DATA_BINANCE], name, coin, free, locked, freeze, withdrawing, native
         )
+        
+    elif all(i in discovery_info for i in ["name", "coin", "total", "fixed", "flexible", "native"]):
+        name = discovery_info["name"]
+        coin = discovery_info["coin"]
+        total = discovery_info["total"]
+        fixed = discovery_info["fixed"]
+        flexible = discovery_info["flexible"]
+        native = discovery_info["native"]
+
+        sensor = BinanceSavingsSensor(
+            hass.data[DATA_BINANCE], name, coin, total, fixed, flexible, native
+        )        
         
     elif all(i in discovery_info for i in ["name", "symbol", "price"]):
         name = discovery_info["name"]
@@ -325,6 +339,88 @@ class BinanceFundingSensor(SensorEntity):
                         self._native_balance["locked"][native] = "{:.8f}".format(float(self._locked) / float(ticker["price"]))
                         self._native_balance["freeze"][native] = "{:.8f}".format(float(self._freeze) / float(ticker["price"]))                                               
                         self._native_balance["withdrawing"][native] = "{:.8f}".format(float(self._withdrawing) / float(ticker["price"]))
+                    
+                        break
+
+class BinanceSavingsSensor(SensorEntity):
+    """Representation of a Sensor."""
+
+    def __init__(self, binance_data, name, coin, total, fixed, flexible, native = []):
+        """Initialize the sensor."""
+        self._binance_data = binance_data
+        self._name = f"{name} {coin} Savings"
+        self._coin = coin
+        self._total = total
+        self._fixed = fixed
+        self._flexible = flexible
+        self._native = native
+        self._unit_of_measurement = coin
+        self._state = None
+        self._native_balance = { "total" : {}, "fixed": {}, "flexible": {} }
+
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+
+        return self._state
+
+    @property
+    def unit_of_measurement(self):
+        """Return the unit of measurement this sensor expresses itself in."""
+        return self._unit_of_measurement
+
+    @property
+    def icon(self):
+        """Icon to use in the frontend, if any."""
+
+        return CURRENCY_ICONS.get(self._coin, "mdi:currency-" + self._coin.lower())
+
+    @property
+    def extra_state_attributes(self):
+        """Return the state attributes of the sensor."""
+
+        data = {
+            ATTR_ATTRIBUTION: ATTRIBUTION,
+            ATTR_FIXED: "{:.8f}".format(float(self._fixed)),
+            ATTR_FLEXIBLE: "{:.8f}".format(float(self._flexible)),
+            ATTR_TOTAL: "{:.8f}".format(float(self._total)),
+        }
+        
+        for type, native in self._native_balance.items():
+            for asset, exchange in native.items(): 
+                data[f"Native {type} savings in {asset}"] = exchange
+         
+        return data
+
+    async def async_update(self):
+        """Update current values."""
+        await self._binance_data.async_update()
+        
+        self._total = self._binance_data.savings[f"totalAmountIn{self._coin}"]
+        self._fixed = self._binance_data.savings[f"totalFixedAmountIn{self._coin}"]
+        self._flexible = self._binance_data.savings[f"totalFlexibleIn{self._coin}"]
+        self._state = self._total
+                        
+        if self._native:
+            for native in self._native:
+                for ticker in self._binance_data.tickers:
+            
+                    if ticker["symbol"] == self._coin + native.upper():
+                        self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
+                        self._native_balance["fixed"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._fixed))
+                        self._native_balance["flexible"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._flexible))
+                    
+                        break
+                    
+                    if ticker["symbol"] == native.upper() + self._coin:      
+                        self._native_balance["total"][native] = "{:.8f}".format(float(self._total) / float(ticker["price"]))
+                        self._native_balance["fixed"][native] = "{:.8f}".format(float(self._fixed) / float(ticker["price"]))
+                        self._native_balance["flexible"][native] = "{:.8f}".format(float(self._flexible) / float(ticker["price"]))
                     
                         break
 
