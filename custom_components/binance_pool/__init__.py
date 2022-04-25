@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.2"
+__version__ = "1.4.3"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -258,10 +258,6 @@ class BinanceData:
             if savings:
                 savings.pop("positionAmountVos", None)
     
-                _LOGGER.debug(f"binance_data.savings BTC before: {savings}")
-                savings['totalFixedAmountInBTC'] = 10.0
-                _LOGGER.debug(f"binance_data.savings BTC after: {savings}")
-                
                 self.savings = savings
                 _LOGGER.debug(f"Savings data updated from binance.{self.tld}")
 
