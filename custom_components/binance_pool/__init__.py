@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.3"
+__version__ = "1.4.4"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -243,25 +243,33 @@ class BinanceData:
     async def async_update(self):
         _LOGGER.debug(f"Fetching data from binance.{self.tld}")
         try:
-            balances = await self.client.async_get_capital_balances()
+
+            tasks = [
+                self.client.async_get_capital_balances(),
+                self.client.async_get_funding_balances(),
+                self.client.get_lending_account(),
+                self.client.get_all_tickers()
+            ]
+            
+            res = await asyncio.gather(*tasks, return_exceptions=True)
+            
+            balances, funding, savings, prices = res
+            
             if balances:
                 self.balances = balances
                 _LOGGER.debug(f"Balances updated from binance.{self.tld}")
 
-            funding = await self.client.async_get_funding_balances()
             if funding:
                 self.funding = funding
                 _LOGGER.debug(f"Funding data updated from binance.{self.tld}")
 
 
-            savings = await self.client.get_lending_account()
             if savings:
                 savings.pop("positionAmountVos", None)
     
                 self.savings = savings
                 _LOGGER.debug(f"Savings data updated from binance.{self.tld}")
 
-            prices = await self.client.get_all_tickers()
             if prices:
                 self.tickers = prices
                 _LOGGER.debug(f"Exchange rates updated from binance.{self.tld}")
@@ -284,7 +292,7 @@ class BinanceData:
                     if algos:
                         for algo in algos:
                             algoname = algo["algoName"].lower()
-                                               
+                            
                             for account, algorithm in self.mining["accounts"].items():
                                 if algoname not in algorithm:
                                     self.mining["accounts"][account][algoname] = {}
