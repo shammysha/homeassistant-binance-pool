@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.4"
+__version__ = "1.4.5"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -88,7 +88,10 @@ async def async_setup(hass, config):
                 balance["name"] = name
                 balance["native"] = native_currency
                 balance.pop("networkList", None)
-                await async_load_platform(hass, "sensor", DOMAIN, balance, config)
+                
+                hass.async_create_task(
+                    async_load_platform(hass, "sensor", DOMAIN, balance, config)
+                )
 
                 fundExists = False
                 
@@ -100,7 +103,9 @@ async def async_setup(hass, config):
                         funding["native"] = native_currency                
                         funding.pop("btcValuation", None)
                         
-                        await async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                        hass.async_create_task(
+                            async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                        )
                         
                         break
 
@@ -114,8 +119,10 @@ async def async_setup(hass, config):
                         "freeze": "0",
                         "withdrawing": "0",
                     }
-                        
-                    await async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                    
+                    hass.async_create_task(                        
+                        async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                    )
                     
         saving = {
             'name': name,
@@ -126,7 +133,9 @@ async def async_setup(hass, config):
             'flexible': binance_data.savings['totalFlexibleInUSDT'],
         }
             
-        await async_load_platform(hass, "sensor", DOMAIN, saving, config)                    
+        hass.async_create_task(
+            async_load_platform(hass, "sensor", DOMAIN, saving, config)
+        )                    
 
         saving = {
             'name': name,
@@ -136,8 +145,10 @@ async def async_setup(hass, config):
             'fixed': binance_data.savings['totalFixedAmountInBTC'],
             'flexible': binance_data.savings['totalFlexibleInBTC'],
         }
-            
-        await async_load_platform(hass, "sensor", DOMAIN, saving, config)
+         
+        hass.async_create_task(   
+            async_load_platform(hass, "sensor", DOMAIN, saving, config)
+        )
                     
 
     if not hasattr(binance_data, "tickers"):
@@ -146,7 +157,10 @@ async def async_setup(hass, config):
         for ticker in binance_data.tickers:
             if not tickers or ticker["symbol"] in tickers:
                 ticker["name"] = name
-                await async_load_platform(hass, "sensor", DOMAIN, ticker, config)                
+                
+                hass.async_create_task(
+                    async_load_platform(hass, "sensor", DOMAIN, ticker, config)
+                )                
 
     if not hasattr(binance_data, "mining") or "accounts" not in binance_data.mining:
         pass
@@ -160,7 +174,10 @@ async def async_setup(hass, config):
                         worker["name"] = name
                         worker["algorithm"] = algo
                         worker["account"] = account
-                        await async_load_platform(hass, "sensor", DOMAIN, worker, config)                        
+                        
+                        hass.async_create_task(
+                            async_load_platform(hass, "sensor", DOMAIN, worker, config)
+                        )                        
                         
                         if worker["status"] == 0:
                             unknown += 1
@@ -211,12 +228,16 @@ async def async_setup(hass, config):
                         else:
                             profit["profitYesterday"] = 0
                           
-                        await async_load_platform(hass, "sensor", DOMAIN, profit, config)                            
+                        hass.async_create_task(
+                            async_load_platform(hass, "sensor", DOMAIN, profit, config)
+                        )                            
                     
                     status.pop("profitToday", None)
                     status.pop("profitYesterday", None)
 
-                    await async_load_platform(hass, "sensor", DOMAIN, status, config)                  
+                    hass.async_create_task(
+                        async_load_platform(hass, "sensor", DOMAIN, status, config)
+                    )                  
                                      
     return True
 
@@ -284,11 +305,18 @@ class BinanceData:
         _LOGGER.debug(f"Fetching mining data from binance.{self.tld}")
         try:        
             if "accounts" in self.mining:
-                coins = await self.client.async_get_mining_coinlist();
+                common_queries = [
+                    self.client.async_get_mining_coinlist(),
+                    self.client.async_get_mining_algolist()
+                ] 
+                
+                res = await asyncio.gather(*common_queries, return_exceptions=True)
+                
+                coins, algos = res
+                
                 if coins:
                     self.coins = coins
 
-                    algos = await self.client.async_get_mining_algolist();
                     if algos:
                         for algo in algos:
                             algoname = algo["algoName"].lower()
