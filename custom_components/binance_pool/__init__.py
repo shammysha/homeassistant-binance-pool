@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.5"
+__version__ = "1.4.6"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -74,15 +74,16 @@ async def async_setup(hass, config):
 
     binance_data = BinanceData(api_key, api_secret, tld, miners)
     
-    await binance_data.async_update();
+    upddata = [ binance_data.async_update() ]
     if miners:
-        await binance_data.async_update_mining()
-
+        upddata.append(
+            binance_data.async_update_mining()
+        )
+    res = await asyncio.gather(*upddata, return_exceptions=True)
+    
     hass.data[DATA_BINANCE] = binance_data
      
-    if not hasattr(binance_data, "balances"):
-        pass
-    else:
+    if hasattr(binance_data, "balances"):
         for balance in binance_data.balances:
             if not balances or balance["coin"] in balances:
                 balance["name"] = name
@@ -151,9 +152,7 @@ async def async_setup(hass, config):
         )
                     
 
-    if not hasattr(binance_data, "tickers"):
-        pass
-    else:
+    if hasattr(binance_data, "tickers"):
         for ticker in binance_data.tickers:
             if not tickers or ticker["symbol"] in tickers:
                 ticker["name"] = name
@@ -162,9 +161,7 @@ async def async_setup(hass, config):
                     async_load_platform(hass, "sensor", DOMAIN, ticker, config)
                 )                
 
-    if not hasattr(binance_data, "mining") or "accounts" not in binance_data.mining:
-        pass
-    else:
+    if hasattr(binance_data, "mining") and "accounts" in binance_data.mining:
         for account, algos in binance_data.mining["accounts"].items():
             for algo, type in algos.items():
                 unknown = invalid = inactive = 0
@@ -295,6 +292,8 @@ class BinanceData:
                 self.tickers = prices
                 _LOGGER.debug(f"Exchange rates updated from binance.{self.tld}")
             
+            return True
+        
         except (BinanceAPIException, BinanceRequestException) as e:
             _LOGGER.error(f"Error fetching data from binance.{self.tld}: {e.message}")
             return False
@@ -337,7 +336,8 @@ class BinanceData:
                                         self.mining["accounts"][account][algoname].update({ "status": status_info })
                                         _LOGGER.debug(f"Mining status updated for {account} ({algoname}) from binance.{self.tld}")                               
                     
-                                      
+            return True
+
         except (BinanceAPIException, BinanceRequestException) as e:
             _LOGGER.error(f"Error fetching mining data from binance.{self.tld}: {e.message}")
             return False                                       
