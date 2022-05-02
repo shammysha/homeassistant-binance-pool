@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.7"
+__version__ = "1.4.8"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -80,7 +80,10 @@ async def async_setup(hass, config):
             binance_data.async_update_mining()
         )
     res = await asyncio.gather(*upddata, return_exceptions=True)
-    
+    for r in res:
+        if isinstance(r, Exception):
+            raise r
+            
     hass.data[DATA_BINANCE] = binance_data
      
     if hasattr(binance_data, "balances"):
@@ -270,7 +273,10 @@ class BinanceData:
             ]
             
             res = await asyncio.gather(*tasks, return_exceptions=True)
-            
+            for r in res:
+                if isinstance(r, Exception):
+                    raise r
+                
             balances, funding, savings, prices = res
             
             _LOGGER.debug(f"balances: {balances}")
@@ -315,7 +321,10 @@ class BinanceData:
                 ] 
                 
                 res = await asyncio.gather(*common_queries, return_exceptions=True)
-                
+                for r in res:
+                    if isinstance(r, Exception):
+                        raise r
+                                    
                 coins, algos = res
                 
                 if coins:
