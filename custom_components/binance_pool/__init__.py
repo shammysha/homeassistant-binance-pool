@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.9"
+__version__ = "1.4.10"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -275,7 +275,6 @@ class BinanceData:
             res = await asyncio.gather(*tasks, return_exceptions=True)
             for r in res:
                 if isinstance(r, Exception):
-                    _LOGGER.debug(f"Exception: {r.message}")
                     raise r
                 
             balances, funding, savings, prices = res
@@ -306,7 +305,7 @@ class BinanceData:
             
             return True
         
-        except (BinanceAPIException, BinanceRequestException) as e:
+        except (BinanceAPIException, BinanceRequestException, asyncio.TimeoutError) as e:
             _LOGGER.error(f"Error fetching data from binance.{self.tld}: {e.message}")
             return False
 
@@ -353,7 +352,7 @@ class BinanceData:
                     
             return True
 
-        except (BinanceAPIException, BinanceRequestException) as e:
+        except (BinanceAPIException, BinanceRequestException, asyncio.TimeoutError) as e:
             _LOGGER.error(f"Error fetching mining data from binance.{self.tld}: {e.message}")
             return False                                       
             
