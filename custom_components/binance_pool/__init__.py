@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.15"
+__version__ = "1.4.16"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -74,174 +74,173 @@ async def async_setup(hass, config):
 
     binance_data = BinanceData(api_key, api_secret, tld, miners)
     
-    try :
-        upddata = [ binance_data.async_update() ]
-        if miners:
-            upddata.append(
-                binance_data.async_update_mining()
-            )
-        res = await asyncio.gather(*upddata, return_exceptions=True)
-        for r in res:
-            if isinstance(r, Exception): 
-                await binance_data.client.close_connection()
-                raise
-                        
-        hass.data[DATA_BINANCE] = binance_data
-         
-        if hasattr(binance_data, "balances"):
-            for balance in binance_data.balances:
-                if not balances or balance["coin"] in balances:
-                    balance["name"] = name
-                    balance["native"] = native_currency
-                    balance.pop("networkList", None)
+    upddata = [ binance_data.async_update() ]
+    if miners:
+        upddata.append(
+            binance_data.async_update_mining()
+        )
+    res = await asyncio.gather(*upddata, return_exceptions=True)
+    for r in res:
+        if isinstance(r, Exception): 
+            await binance_data.client.close_connection()
+            raise
                     
-                    hass.async_create_task(
-                        async_load_platform(hass, "sensor", DOMAIN, balance, config)
-                    )
-    
-                    fundExists = False
-                    
-                    for funding in binance_data.funding:
-                        if funding["asset"] == balance["coin"]:
-                            fundExists = True
-                            
-                            funding["name"] = name
-                            funding["native"] = native_currency                
-                            funding.pop("btcValuation", None)
-                            
-                            hass.async_create_task(
-                                async_load_platform(hass, "sensor", DOMAIN, funding, config)
-                            )
-                            
-                            break
-    
-                    if not fundExists:
-                        funding = {
-                            "name": name,
-                            "native": native_currency,
-                            "asset": balance["coin"],
-                            "free": "0",
-                            "locked": "0",
-                            "freeze": "0",
-                            "withdrawing": "0",
-                        }
+    hass.data[DATA_BINANCE] = binance_data
+     
+    if hasattr(binance_data, "balances"):
+        for balance in binance_data.balances:
+            if not balances or balance["coin"] in balances:
+                balance["name"] = name
+                balance["native"] = native_currency
+                balance.pop("networkList", None)
+                
+                hass.async_create_task(
+                    async_load_platform(hass, "sensor", DOMAIN, balance, config)
+                )
+
+                fundExists = False
+                
+                for funding in binance_data.funding:
+                    if funding["asset"] == balance["coin"]:
+                        fundExists = True
                         
-                        hass.async_create_task(                        
+                        funding["name"] = name
+                        funding["native"] = native_currency                
+                        funding.pop("btcValuation", None)
+                        
+                        hass.async_create_task(
                             async_load_platform(hass, "sensor", DOMAIN, funding, config)
                         )
                         
-            saving = {
-                'name': name,
-                'native': native_currency,
-                'coin': 'USDT',
-                'total': binance_data.savings['totalAmountInUSDT'],
-                'fixed': binance_data.savings['totalFixedAmountInUSDT'],
-                'flexible': binance_data.savings['totalFlexibleInUSDT'],
-            }
+                        break
+
+                if not fundExists:
+                    funding = {
+                        "name": name,
+                        "native": native_currency,
+                        "asset": balance["coin"],
+                        "free": "0",
+                        "locked": "0",
+                        "freeze": "0",
+                        "withdrawing": "0",
+                    }
+                    
+                    hass.async_create_task(                        
+                        async_load_platform(hass, "sensor", DOMAIN, funding, config)
+                    )
+                    
+        saving = {
+            'name': name,
+            'native': native_currency,
+            'coin': 'USDT',
+            'total': binance_data.savings['totalAmountInUSDT'],
+            'fixed': binance_data.savings['totalFixedAmountInUSDT'],
+            'flexible': binance_data.savings['totalFlexibleInUSDT'],
+        }
+            
+        hass.async_create_task(
+            async_load_platform(hass, "sensor", DOMAIN, saving, config)
+        )                    
+
+        saving = {
+            'name': name,
+            'native': native_currency,
+            'coin': 'BTC',
+            'total': binance_data.savings['totalAmountInBTC'],
+            'fixed': binance_data.savings['totalFixedAmountInBTC'],
+            'flexible': binance_data.savings['totalFlexibleInBTC'],
+        }
+         
+        hass.async_create_task(   
+            async_load_platform(hass, "sensor", DOMAIN, saving, config)
+        )
+                    
+
+    if hasattr(binance_data, "tickers"):
+        for ticker in binance_data.tickers:
+            if not tickers or ticker["symbol"] in tickers:
+                ticker["name"] = name
                 
-            hass.async_create_task(
-                async_load_platform(hass, "sensor", DOMAIN, saving, config)
-            )                    
-    
-            saving = {
-                'name': name,
-                'native': native_currency,
-                'coin': 'BTC',
-                'total': binance_data.savings['totalAmountInBTC'],
-                'fixed': binance_data.savings['totalFixedAmountInBTC'],
-                'flexible': binance_data.savings['totalFlexibleInBTC'],
-            }
-             
-            hass.async_create_task(   
-                async_load_platform(hass, "sensor", DOMAIN, saving, config)
-            )
+                hass.async_create_task(
+                    async_load_platform(hass, "sensor", DOMAIN, ticker, config)
+                )                
+
+    if hasattr(binance_data, "mining") and "accounts" in binance_data.mining:
+        for account, algos in binance_data.mining["accounts"].items():
+            for algo, type in algos.items():
+                unknown = invalid = inactive = 0
+                
+                if "workers" in type:
+                    for worker in type["workers"]:
+                        worker["name"] = name
+                        worker["algorithm"] = algo
+                        worker["account"] = account
                         
-    
-        if hasattr(binance_data, "tickers"):
-            for ticker in binance_data.tickers:
-                if not tickers or ticker["symbol"] in tickers:
-                    ticker["name"] = name
-                    
-                    hass.async_create_task(
-                        async_load_platform(hass, "sensor", DOMAIN, ticker, config)
-                    )                
-    
-        if hasattr(binance_data, "mining") and "accounts" in binance_data.mining:
-            for account, algos in binance_data.mining["accounts"].items():
-                for algo, type in algos.items():
-                    unknown = invalid = inactive = 0
-                    
-                    if "workers" in type:
-                        for worker in type["workers"]:
-                            worker["name"] = name
-                            worker["algorithm"] = algo
-                            worker["account"] = account
-                            
-                            hass.async_create_task(
-                                async_load_platform(hass, "sensor", DOMAIN, worker, config)
-                            )                        
-                            
-                            if worker["status"] == 0:
-                                unknown += 1
-                            elif worker["status"] == 2:
-                                invalid += 1
-                            elif worker["status"] == 3:
-                                inactive += 1    
-                            
-                    if "status" in type:
-                        status = copy.deepcopy(type["status"])
-                        status["name"] = name
-                        status["algorithm"] = algo
-                        status["account"] = account
-                        status["unknown"] = unknown
-                        status["invalid"] = invalid
-                        status["inactive"] = inactive
-                        
-                        if "fifteenMinHashRate" not in status:
-                            status["fifteenMinHashRate"] = 0
-                            
-                        if "dayHashRate" not in status:
-                            status["dayHashRate"] = 0                    
-    
-                        for coindata in binance_data.coins:
-                            if coindata["algoName"].lower() != algo:
-                                continue
-    
-                            coin = coindata["coinName"]
-                            
-                            estimate = status.get("profitToday", {})
-                            earnings = status.get("profitYesterday", {})
-                            
-                            profit = {
-                                "name": name, 
-                                "algorithm": algo,
-                                "account": account,
-                                "coin": coin,
-                                "native": native_currency,
-                            }
-                            
-                            if coin in estimate:
-                                profit["profitToday"] = estimate[coin]
-                            else:
-                                profit["profitToday"] = 0
-                            
-                            if coin in earnings:
-                                profit["profitYesterday"] = earnings[coin]
-                            else:
-                                profit["profitYesterday"] = 0
-                              
-                            hass.async_create_task(
-                                async_load_platform(hass, "sensor", DOMAIN, profit, config)
-                            )                            
-                        
-                        status.pop("profitToday", None)
-                        status.pop("profitYesterday", None)
-    
                         hass.async_create_task(
-                            async_load_platform(hass, "sensor", DOMAIN, status, config)
-                        )                  
-                                         
-        return True
+                            async_load_platform(hass, "sensor", DOMAIN, worker, config)
+                        )                        
+                        
+                        if worker["status"] == 0:
+                            unknown += 1
+                        elif worker["status"] == 2:
+                            invalid += 1
+                        elif worker["status"] == 3:
+                            inactive += 1    
+                        
+                if "status" in type:
+                    status = copy.deepcopy(type["status"])
+                    status["name"] = name
+                    status["algorithm"] = algo
+                    status["account"] = account
+                    status["unknown"] = unknown
+                    status["invalid"] = invalid
+                    status["inactive"] = inactive
+                    
+                    if "fifteenMinHashRate" not in status:
+                        status["fifteenMinHashRate"] = 0
+                        
+                    if "dayHashRate" not in status:
+                        status["dayHashRate"] = 0                    
+
+                    for coindata in binance_data.coins:
+                        if coindata["algoName"].lower() != algo:
+                            continue
+
+                        coin = coindata["coinName"]
+                        
+                        estimate = status.get("profitToday", {})
+                        earnings = status.get("profitYesterday", {})
+                        
+                        profit = {
+                            "name": name, 
+                            "algorithm": algo,
+                            "account": account,
+                            "coin": coin,
+                            "native": native_currency,
+                        }
+                        
+                        if coin in estimate:
+                            profit["profitToday"] = estimate[coin]
+                        else:
+                            profit["profitToday"] = 0
+                        
+                        if coin in earnings:
+                            profit["profitYesterday"] = earnings[coin]
+                        else:
+                            profit["profitYesterday"] = 0
+                          
+                        hass.async_create_task(
+                            async_load_platform(hass, "sensor", DOMAIN, profit, config)
+                        )                            
+                    
+                    status.pop("profitToday", None)
+                    status.pop("profitYesterday", None)
+
+                    hass.async_create_task(
+                        async_load_platform(hass, "sensor", DOMAIN, status, config)
+                    )                  
+                                     
+    return True
     
 class BinanceData:
     def __init__(self, api_key, api_secret, tld, miners = []):
