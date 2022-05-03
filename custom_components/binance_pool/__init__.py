@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.13"
+__version__ = "1.4.14"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -276,6 +276,8 @@ class BinanceData:
             
             res = await asyncio.gather(*tasks, return_exceptions=True)
             for r in res:
+                _LOGGER.debug(f"res... {repr(r)}")
+                
                 if isinstance(r, Exception): 
                     raise
                 
