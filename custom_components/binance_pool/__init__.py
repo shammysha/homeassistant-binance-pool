@@ -12,7 +12,7 @@ import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
 
-__version__ = "1.4.17"
+__version__ = "1.4.18"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 DOMAIN = "binance_pool"
@@ -83,8 +83,10 @@ async def async_setup(hass, config):
     for r in res:
         if isinstance(r, Exception): 
             await binance_data.client.close_connection()
-            raise r
-                    
+            _LOGGER.error(f"Error fetching data from binance.{self.tld}: {repr(r)}")
+            
+            return True
+        
     hass.data[DATA_BINANCE] = binance_data
      
     if hasattr(binance_data, "balances"):
