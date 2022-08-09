@@ -661,7 +661,7 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
         """Update current values."""
         exists = False
 
-        for account, algos in self._binance_data.mining.items():
+        for account, algos in self.coordinator.mining.items():
             if account != self._account:
                 continue
                 
