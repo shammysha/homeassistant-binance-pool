@@ -30,7 +30,7 @@ from .const import (
     COORDINATOR_MINING,
     COORDINATOR_WALLET    
 )
-__version__ = "1.5.5"
+__version__ = "1.5.6"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -259,6 +259,7 @@ class BinanceDataMining(DataUpdateCoordinator):
         super().__init__(hass, _LOGGER, name="BinanceDataMining", update_interval=timedelta(minutes=MIN_TIME_BETWEEN_MINING_UPDATES))
         self.client = BinancePoolClient(api_key, api_secret, tld=tld)
         
+        self.mining = {}
         self.tld = tld
         
         for account in miners:
