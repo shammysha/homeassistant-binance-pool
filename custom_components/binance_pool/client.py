@@ -25,25 +25,13 @@ class BinancePoolClient(AsyncClient):
     def _create_capital_api_url(self, path: str, version: str = BALANCES_API_URL ) -> str:
         return self.BALANCES_API_URL.format(self.tld) + '/' + self.BALANCES_API_VERSION + '/capital/' + path
         
-    async def _handle_response(self, response: ClientResponse):
-        try:
-            res = await super()._handle_response(response)
-            
-            _LOGGER.debug(f"RESPONSE IS {res}")
-            
-            if res["code"] != 0 or "data" not in res:
-                txt = await response.text()
-                raise BinanceRequestException(f'Invalid Response: {txt}')
-            
-            return res            
-        
-        except TypeError:
-            raise BinanceRequestException(f'Invalid Response: {res}')
-        
     async def async_request_mining_api(self, method, path, signed=False, **kwargs):
         uri = self._create_mining_api_url(path)
         
         answer = await self._request(method, uri, signed, True, **kwargs)
+        
+        if answer["code"] != 0 or "data" not in answer:
+            raise BinanceRequestException(f'Invalid Response: {answer}')        
         
         return answer["data"]
 
