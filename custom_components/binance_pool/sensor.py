@@ -1,59 +1,52 @@
 """
 Binance sensor
 """
-from datetime import datetime, timezone
+from datetime import datetime
 
 from homeassistant.const import ATTR_ATTRIBUTION
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.helpers.update_coordinator import (CoordinatorEntity, DataUpdateCoordinator, UpdateFailed)
 
-CURRENCY_ICONS = {
-    "BTC": "mdi:currency-btc",
-    "BSV": "mdi:bitcoin",
-    "BCH": "mdi:bitcoin",    
-    "ETH": "mdi:currency-eth",
-    "EUR": "mdi:currency-eur",
-    "LTC": "mdi:litecoin",
-    "USD": "mdi:currency-usd",
-    "USDT": "mdi:currency-usd",
-    "RUB": "mdi:currency-rub"
-}
+from .const import (
+    DOMAIN,
+    CURRENCY_ICONS,
+    DEFAULT_COIN_ICON,
 
-DEFAULT_COIN_ICON = "mdi:currency-usd-circle"
+    ATTRIBUTION,
+    ATTR_FREE,
+    ATTR_LOCKED,
+    ATTR_FREEZE,
+    ATTR_WITHDRAW,
+    ATTR_TOTAL,
+    ATTR_NATIVE_BALANCE,
+    ATTR_FLEXIBLE,
+    ATTR_FIXED,
+    
+    ATTR_WORKER_STATUS,
+    ATTR_WORKER_HRATE,
+    ATTR_WORKER_HRATE_DAILY,
+    ATTR_WORKER_REJECT,
+    ATTR_WORKER_WORKER,
+    ATTR_WORKER_UPDATE,
+    
+    ATTR_STATUS_HRATE15M,
+    ATTR_STATUS_HRATE24H,
+    ATTR_STATUS_VALID_WORKERS,
+    ATTR_STATUS_INVALID_WORKERS,
+    ATTR_STATUS_INACTIVE_WORKERS,
+    ATTR_STATUS_UNKNOWN_WORKERS,
+    ATTR_STATUS_TOTAL_ALERTS,
+    
+    ATTR_PROFIT_ESTIMATE,
+    ATTR_PROFIT_EARNINGS,
+    
+    ATTR_ACCOUNT,
+    ATTR_ALGO,
+    ATTR_COIN,
 
-ATTRIBUTION = "Data provided by Binance"
-ATTR_FREE = "free"
-ATTR_LOCKED = "locked"
-ATTR_FREEZE = "freeze"
-ATTR_WITHDRAW = "withdrawing"
-ATTR_TOTAL = "total"
-ATTR_NATIVE_BALANCE = "native balance"
-ATTR_FLEXIBLE = "flexible"
-ATTR_FIXED = "fixed"
-
-ATTR_WORKER_STATUS = "status"
-ATTR_WORKER_HRATE = "hashrate"
-ATTR_WORKER_HRATE_DAILY = "daily_hashrate"
-ATTR_WORKER_REJECT = "reject_rate"
-ATTR_WORKER_WORKER = "worker_name"
-ATTR_WORKER_UPDATE = "updated"
-
-ATTR_STATUS_HRATE15M = "average hashrate (15 mins)"
-ATTR_STATUS_HRATE24H = "average hashrate (24 hours)"
-ATTR_STATUS_VALID_WORKERS = "valid workers"
-ATTR_STATUS_INVALID_WORKERS = "invalid workers"
-ATTR_STATUS_INACTIVE_WORKERS = "inactive workers"
-ATTR_STATUS_UNKNOWN_WORKERS = "unknown workers"
-ATTR_STATUS_TOTAL_ALERTS = "All workers with alerts"
-
-ATTR_PROFIT_ESTIMATE = "estimated profit"
-ATTR_PROFIT_EARNINGS = "yesterday's earnings"
-
-ATTR_ACCOUNT = "account"
-ATTR_ALGO = "algorithm"
-ATTR_COIN = "coin"
-
-DATA_BINANCE = "binance_pool_cache"
-
+    COORDINATOR_MINING,
+    COORDINATOR_WALLET
+)
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Setup the Binance sensors."""
 
@@ -69,7 +62,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         native = discovery_info["native"]
 
         sensor = BinanceSensor(
-            hass.data[DATA_BINANCE], name, coin, free, locked, freeze, native
+            hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, coin, free, locked, freeze, native
         )
         
     elif all(i in discovery_info for i in ["name", "asset", "free", "locked", "freeze", "withdrawing", "native"]):
@@ -82,7 +75,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         withdrawing = discovery_info["withdrawing"]
 
         sensor = BinanceFundingSensor(
-            hass.data[DATA_BINANCE], name, coin, free, locked, freeze, withdrawing, native
+            hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, coin, free, locked, freeze, withdrawing, native
         )
         
     elif all(i in discovery_info for i in ["name", "coin", "total", "fixed", "flexible", "native"]):
@@ -94,7 +87,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         native = discovery_info["native"]
 
         sensor = BinanceSavingsSensor(
-            hass.data[DATA_BINANCE], name, coin, total, fixed, flexible, native
+            hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, coin, total, fixed, flexible, native
         )        
         
     elif all(i in discovery_info for i in ["name", "symbol", "price"]):
@@ -102,7 +95,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         symbol = discovery_info["symbol"]
         price = discovery_info["price"]
 
-        sensor = BinanceExchangeSensor(hass.data[DATA_BINANCE], name, symbol, price)
+        sensor = BinanceExchangeSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, symbol, price)
 
 
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "workerName", "status", "hashRate", "dayHashRate", "rejectRate", "lastShareTime"]):
@@ -116,7 +109,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         reject = discovery_info["rejectRate"]
         update = discovery_info["lastShareTime"]
 
-        sensor = BinanceWorkerSensor(hass.data[DATA_BINANCE], name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
+        sensor = BinanceWorkerSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING], name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
 
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "fifteenMinHashRate", "dayHashRate", "validNum", "invalidNum", "unknown", "invalid", "inactive"]):
         name = discovery_info["name"]
@@ -130,7 +123,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         invalid = discovery_info["invalid"]
         inactive = discovery_info["inactive"]
 
-        sensor = BinanceStatusSensor(hass.data[DATA_BINANCE], name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive)
+        sensor = BinanceStatusSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING], name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive)
         
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday", "native"]):
         name = discovery_info["name"]
@@ -141,16 +134,17 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         earnings = discovery_info["profitYesterday"]
         native = discovery_info["native"]
         
-        sensor = BinanceProfitSensor(hass.data[DATA_BINANCE], name, account, algorithm, coin, estimate, earnings, native)        
+        sensor = BinanceProfitSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING], hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, account, algorithm, coin, estimate, earnings, native)        
 
     async_add_entities([sensor], True)
 
-class BinanceSensor(SensorEntity):
+class BinanceSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
-
-    def __init__(self, binance_data, name, coin, free, locked, freeze, native = []):
+    
+    def __init__(self, coordinator, name, coin, free, locked, freeze, native = []):
+        super().__init__(coordinator)
+        
         """Initialize the sensor."""
-        self._binance_data = binance_data
         self._name = f"{name} {coin} Balance"
         self._coin = coin
         self._free = free
@@ -202,10 +196,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
          
         return data
 
-    async def async_update(self):
-        """Update current values."""
-        await self._binance_data.async_update()
-        for balance in self._binance_data.balances:
+    def _handle_coordinator_update(self) -> None:
+        for balance in self.coordinator.balances:
             if balance["coin"] == self._coin:
                 
                 self._total = float(balance["free"]) + float(balance["locked"]) + float(balance["freeze"])
@@ -216,7 +208,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                 
                 if self._native:
                     for native in self._native:
-                        for ticker in self._binance_data.tickers:
+                        for ticker in self.coordinator.tickers:
                             if ticker["symbol"] == self._coin + native.upper():
                                 self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
                                 self._native_balance["free"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._free))
@@ -234,12 +226,16 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
                                 break
                 break
 
-class BinanceFundingSensor(SensorEntity):
+        self.async_write_ha_state()
+        
+class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, coin, free, locked, freeze, withdrawing, native = []):
+    def __init__(self, coordinator, name, coin, free, locked, freeze, withdrawing, native = []):
+        super().__init__(coordinator)
+        
         """Initialize the sensor."""
-        self._binance_data = binance_data
+       
         self._name = f"{name} {coin} Funding"
         self._coin = coin
         self._free = free
@@ -293,13 +289,12 @@ class BinanceFundingSensor(SensorEntity):
          
         return data
 
-    async def async_update(self):
+    def _handle_coordinator_update(self) -> None:
         """Update current values."""
-        await self._binance_data.async_update()
         
         fundExists = False
         
-        for funding in self._binance_data.funding:
+        for funding in self.coordinator.funding:
             if funding["asset"] == self._coin:
                 fundExists = True
                 
@@ -322,7 +317,7 @@ class BinanceFundingSensor(SensorEntity):
                 
         if self._native:
             for native in self._native:
-                for ticker in self._binance_data.tickers:
+                for ticker in self.coordinator.tickers:
             
                     if ticker["symbol"] == self._coin + native.upper():
                         self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
@@ -342,12 +337,15 @@ class BinanceFundingSensor(SensorEntity):
                     
                         break
 
-class BinanceSavingsSensor(SensorEntity):
+        self.async_write_ha_state()
+        
+class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, coin, total, fixed, flexible, native = []):
+    def __init__(self, coordinator, name, coin, total, fixed, flexible, native = []):
+        super().__init__(coordinator)
+        
         """Initialize the sensor."""
-        self._binance_data = binance_data
         self._name = f"{name} {coin} Savings"
         self._coin = coin
         self._total = total
@@ -397,18 +395,17 @@ class BinanceSavingsSensor(SensorEntity):
          
         return data
 
-    async def async_update(self):
+    def _handle_coordinator_update(self) -> None:
         """Update current values."""
-        await self._binance_data.async_update()
         
-        self._total = self._binance_data.savings[f"totalAmountIn{self._coin}"]
-        self._fixed = self._binance_data.savings[f"totalFixedAmountIn{self._coin}"]
-        self._flexible = self._binance_data.savings[f"totalFlexibleIn{self._coin}"]
+        self._total = self.coordinator.savings[f"totalAmountIn{self._coin}"]
+        self._fixed = self.coordinator.savings[f"totalFixedAmountIn{self._coin}"]
+        self._flexible = self.coordinator.savings[f"totalFlexibleIn{self._coin}"]
         self._state = self._total
                         
         if self._native:
             for native in self._native:
-                for ticker in self._binance_data.tickers:
+                for ticker in self.coordinator.tickers:
             
                     if ticker["symbol"] == self._coin + native.upper():
                         self._native_balance["total"][native] = "{:.2f}".format(float(ticker["price"]) * float(self._total))
@@ -424,12 +421,13 @@ class BinanceSavingsSensor(SensorEntity):
                     
                         break
 
-class BinanceExchangeSensor(SensorEntity):
+class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, symbol, price):
+    def __init__(self, coordinator, name, symbol, price):
+        super().__init__(coordinator)
+                
         """Initialize the sensor."""
-        self._binance_data = binance_data
         self._name = f"{name} {symbol} Exchange"
         self._symbol = symbol
         self._price = price
@@ -464,13 +462,12 @@ class BinanceExchangeSensor(SensorEntity):
             ATTR_ATTRIBUTION: ATTRIBUTION,
         }
 
-    async def async_update(self):
+    def _handle_coordinator_update(self) -> None:
         """Update current values."""
-        await self._binance_data.async_update()
         
         symbols = {}
-        for coin1 in self._binance_data.balances:
-            for coin2 in self._binance_data.balances:
+        for coin1 in self.coordinator.balances:
+            for coin2 in self.coordinator.balances:
                 if coin1["coin"] == coin2["coin"]: 
                     continue
                     
@@ -480,7 +477,7 @@ class BinanceExchangeSensor(SensorEntity):
                     symbols[symbol] = coin2["coin"]
                 
                 
-        for ticker in self._binance_data.tickers:
+        for ticker in self.coordinator.tickers:
             if ticker["symbol"] == self._symbol:
                 self._state = float(ticker["price"])
                 
@@ -492,12 +489,13 @@ class BinanceExchangeSensor(SensorEntity):
 
    
              
-class BinanceWorkerSensor(SensorEntity):
+class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update):
+    def __init__(self, coordinator, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update):
+        super().__init__(coordinator)        
+        
         """Initialize the sensor."""
-        self._binance_data = binance_data
         self._name = f"{name} {account}.{worker} ({algorithm}) worker"
         self._account = account
         self._algorithm = algorithm
@@ -555,19 +553,18 @@ class BinanceWorkerSensor(SensorEntity):
         
         try:
             data[ATTR_WORKER_STATUS] = self._status_vars[self._status]
-        except KeyError as e:
+        except KeyError:
             data[ATTR_WORKER_STATUS] = "unknown"
         
         return data
         
         
-    async def async_update(self):
+    def _handle_coordinator_update(self) -> None:
         """Update current values."""
-        await self._binance_data.async_update_mining()
 
         exists = False
                 
-        for account, algos in self._binance_data.mining["accounts"].items():
+        for account, algos in self.coordinator.mining.items():
             if account != self._account:
                 continue
                 
@@ -599,12 +596,13 @@ class BinanceWorkerSensor(SensorEntity):
         if not exists:
             self._state = None 
             
-class BinanceStatusSensor(SensorEntity):
+class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive):
+    def __init__(self, coordinator, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive):
+        super().__init__(coordinator)
+        
         """Initialize the sensor."""
-        self._binance_data = binance_data
         self._name = f"{name} {account} ({algorithm}) status"
         self._account = account
         self._algorithm = algorithm
@@ -659,13 +657,11 @@ class BinanceStatusSensor(SensorEntity):
         }
         
         
-    async def async_update(self):
+    def _handle_coordinator_update(self) -> None:
         """Update current values."""
-        await self._binance_data.async_update_mining()
-
         exists = False
 
-        for account, algos in self._binance_data.mining["accounts"].items():
+        for account, algos in self._binance_data.mining.items():
             if account != self._account:
                 continue
                 
@@ -705,12 +701,13 @@ class BinanceStatusSensor(SensorEntity):
         if not exists:
             self._state = 0
             
-class BinanceProfitSensor(SensorEntity):
+class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
-    def __init__(self, binance_data, name, account, algorithm, coin, estimate, earnings, native = []):
+    def __init__(self, coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native = []):
+        super().__init__(coordinator)
+        
         """Initialize the sensor."""
-        self._binance_data = binance_data
         self._name = f"{name} {account} ({algorithm}) {coin} profit"
         self._account = account
         self._algorithm = algorithm
@@ -722,7 +719,7 @@ class BinanceProfitSensor(SensorEntity):
         self._native = native
         self._native_earnings = {}
         self._native_estimate = {}
-        
+        self._wallet = wallet
     @property
     def name(self):
         """Return the name of the sensor."""
@@ -768,13 +765,12 @@ class BinanceProfitSensor(SensorEntity):
         return data
         
         
-    async def async_update(self):
+    def _handle_coordinator_update(self) -> None:
         """Update current values."""
-        await self._binance_data.async_update_mining()
 
         exists = False
                 
-        for account, algos in self._binance_data.mining["accounts"].items():
+        for account, algos in self.coordinator.mining.items():
             if account != self._account:
                 continue
                 
@@ -783,7 +779,7 @@ class BinanceProfitSensor(SensorEntity):
                     continue
                 
                 
-                for coindata in self._binance_data.coins:
+                for coindata in self.coordinator.coins:
                     coin = coindata["coinName"]
                     
                     if coin != self._coin:
@@ -823,7 +819,7 @@ class BinanceProfitSensor(SensorEntity):
 
                     if self._native:
                         for native in self._native: 
-                            for ticker in self._binance_data.tickers:
+                            for ticker in self._wallet.tickers:
                                 if ticker["symbol"] == self._coin + native.upper():
                                     self._native_estimate[native] = float("{:.8f}".format(float(ticker["price"]) * float(self._estimate)))
                             
@@ -835,17 +831,17 @@ class BinanceProfitSensor(SensorEntity):
                                     break 
 
                     if self._native:
-                          for native in self._native: 
-                              for ticker in self._binance_data.tickers:
-                                  if ticker["symbol"] == self._coin + native.upper():
-                                      self._native_earnings[native] = "{:.8f}".format(float(ticker["price"]) * float(self._earnings))
-                              
-                                      break
-                                  
-                                  if ticker["symbol"] == native.upper() + self._coin:      
-                                      self._native_earnings[native] = "{:.8f}".format(float(self._earnings) / float(ticker["price"]))
-                              
-                                      break 
+                        for native in self._native: 
+                            for ticker in self._wallet.tickers:
+                                if ticker["symbol"] == self._coin + native.upper():
+                                    self._native_earnings[native] = "{:.8f}".format(float(ticker["price"]) * float(self._earnings))
+                            
+                                    break
+                                
+                                if ticker["symbol"] == native.upper() + self._coin:      
+                                    self._native_earnings[native] = "{:.8f}".format(float(self._earnings) / float(ticker["price"]))
+                            
+                                    break 
 
                     break   
                 

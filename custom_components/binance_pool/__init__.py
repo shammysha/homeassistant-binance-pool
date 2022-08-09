@@ -5,33 +5,33 @@ import copy
 
 from binance.client import AsyncClient
 from binance.exceptions import BinanceAPIException, BinanceRequestException
+
 import voluptuous as vol
+import homeassistant.helpers.config_validation as cv
 
 from homeassistant.const import CONF_API_KEY, CONF_NAME
-import homeassistant.helpers.config_validation as cv
 from homeassistant.helpers.discovery import async_load_platform
 from homeassistant.util import Throttle
-
-__version__ = "1.4.20"
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator, UpdateFailed
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from .const import (
+    DOMAIN,
+    DEFAULT_NAME,
+    DEFAULT_DOMAIN,
+    DEFAULT_CURRENCY,
+    CONF_API_SECRET,
+    CONF_BALANCES,
+    CONF_EXCHANGES,
+    CONF_MINING,
+    CONF_DOMAIN,
+    CONF_NATIVE_CURRENCY,
+    MIN_TIME_BETWEEN_UPDATES,
+    MIN_TIME_BETWEEN_MINING_UPDATES,
+    COORDINATOR_MINING,
+    COORDINATOR_WALLET    
+)
+__version__ = "1.5.0"
 REQUIREMENTS = ["python-binance==1.0.10"]
-
-DOMAIN = "binance_pool"
-
-DEFAULT_NAME = "Binance"
-DEFAULT_DOMAIN = "us"
-DEFAULT_CURRENCY = [ "USD" ]
-CONF_API_SECRET = "api_secret"
-CONF_BALANCES = "balances"
-CONF_EXCHANGES = "exchanges"
-CONF_MINING = "miners"
-CONF_DOMAIN = "domain"
-CONF_NATIVE_CURRENCY = "native_currency"
-
-SCAN_INTERVAL = timedelta(minutes=1)
-MIN_TIME_BETWEEN_UPDATES = timedelta(minutes=1)
-MIN_TIME_BETWEEN_MINING_UPDATES = timedelta(minutes=5)
-
-DATA_BINANCE = "binance_pool_cache"
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -72,25 +72,33 @@ async def async_setup(hass, config):
     native_currency = config[DOMAIN].get(CONF_NATIVE_CURRENCY)
     tld = config[DOMAIN].get(CONF_DOMAIN)
 
-    binance_data = BinanceData(api_key, api_secret, tld, miners)
+    binance_data_wallet = BinanceDataWallet(hass, api_key, api_secret, tld)
+    binance_data_mining = BinanceDataMining(hass, api_key, api_secret, tld, miners)
     
-    upddata = [ binance_data.async_update() ]
+    upddata = [ binance_data_wallet.async_config_entry_first_refresh() ]
     if miners:
         upddata.append(
-            binance_data.async_update_mining()
+            binance_data_mining.async_config_entry_first_refresh()
         )
+    
     res = await asyncio.gather(*upddata, return_exceptions=True)
+    
     for r in res:
         if isinstance(r, Exception): 
-            await binance_data.client.close_connection()
-            _LOGGER.error(f"Error fetching data from binance.{tld}: {repr(r)}")
-            
-            return True
-        
-    hass.data[DATA_BINANCE] = binance_data
-     
-    if hasattr(binance_data, "balances"):
-        for balance in binance_data.balances:
+            await binance_data_wallet.client.close_connection()
+            await binance_data_mining.client.close_connection()
+            raise r
+
+    hass.data[DOMAIN] = {
+        'config': config,
+        'coordinator': {
+             COORDINATOR_WALLET: binance_data_wallet,
+             COORDINATOR_MINING: binance_data_mining
+        }
+    }
+    
+    if hasattr(binance_data_wallet, "balances"):
+        for balance in binance_data_wallet.balances:
             if not balances or balance["coin"] in balances:
                 balance["name"] = name
                 balance["native"] = native_currency
@@ -102,7 +110,7 @@ async def async_setup(hass, config):
 
                 fundExists = False
                 
-                for funding in binance_data.funding:
+                for funding in binance_data_wallet.funding:
                     if funding["asset"] == balance["coin"]:
                         fundExists = True
                         
@@ -135,9 +143,9 @@ async def async_setup(hass, config):
             'name': name,
             'native': native_currency,
             'coin': 'USDT',
-            'total': binance_data.savings['totalAmountInUSDT'],
-            'fixed': binance_data.savings['totalFixedAmountInUSDT'],
-            'flexible': binance_data.savings['totalFlexibleInUSDT'],
+            'total': binance_data_wallet.savings['totalAmountInUSDT'],
+            'fixed': binance_data_wallet.savings['totalFixedAmountInUSDT'],
+            'flexible': binance_data_wallet.savings['totalFlexibleInUSDT'],
         }
             
         hass.async_create_task(
@@ -148,9 +156,9 @@ async def async_setup(hass, config):
             'name': name,
             'native': native_currency,
             'coin': 'BTC',
-            'total': binance_data.savings['totalAmountInBTC'],
-            'fixed': binance_data.savings['totalFixedAmountInBTC'],
-            'flexible': binance_data.savings['totalFlexibleInBTC'],
+            'total': binance_data_wallet.savings['totalAmountInBTC'],
+            'fixed': binance_data_wallet.savings['totalFixedAmountInBTC'],
+            'flexible': binance_data_wallet.savings['totalFlexibleInBTC'],
         }
          
         hass.async_create_task(   
@@ -158,8 +166,8 @@ async def async_setup(hass, config):
         )
                     
 
-    if hasattr(binance_data, "tickers"):
-        for ticker in binance_data.tickers:
+    if hasattr(binance_data_wallet.data, "tickers"):
+        for ticker in binance_data_wallet.tickers:
             if not tickers or ticker["symbol"] in tickers:
                 ticker["name"] = name
                 
@@ -167,8 +175,8 @@ async def async_setup(hass, config):
                     async_load_platform(hass, "sensor", DOMAIN, ticker, config)
                 )                
 
-    if hasattr(binance_data, "mining") and "accounts" in binance_data.mining:
-        for account, algos in binance_data.mining["accounts"].items():
+    if hasattr(binance_data_mining, "mining"):
+        for account, algos in binance_data_mining.mining.items():
             for algo, type in algos.items():
                 unknown = invalid = inactive = 0
                 
@@ -204,7 +212,7 @@ async def async_setup(hass, config):
                     if "dayHashRate" not in status:
                         status["dayHashRate"] = 0                    
 
-                    for coindata in binance_data.coins:
+                    for coindata in binance_data_wallet.coins:
                         if coindata["algoName"].lower() != algo:
                             continue
 
@@ -244,27 +252,77 @@ async def async_setup(hass, config):
                                      
     return True
     
-class BinanceData:
-    def __init__(self, api_key, api_secret, tld, miners = []):
+class BinanceDataMining(DataUpdateCoordinator):
+    def __init__(self, hass, api_key, api_secret, tld, miners = []):
         """Initialize."""
+        
+        super().__init__(hass, _LOGGER, name="BinanceDataMining", update_interval=timedelta(minutes=MIN_TIME_BETWEEN_MINING_UPDATES))
+        self.client = BinancePoolClient(api_key, api_secret, tld=tld)
+        
+        self.mining = {}
+
+        for account in miners:
+            self.mining = { account: {} }
+
+    async def async_update_data(self):
+        _LOGGER.debug(f"Fetching mining data from binance.{self.tld}")
+
+        try:        
+            if self.mining:
+                common_queries = [
+                    self.client.async_get_mining_coinlist(),
+                    self.client.async_get_mining_algolist()
+                ] 
+                
+                res = await asyncio.gather(*common_queries, return_exceptions=True)
+                                    
+                coins, algos = res
+                
+                if coins:
+                    self.coins = coins
+
+                    if algos:
+                        for algo in algos:
+                            algoname = algo["algoName"].lower()
+                            
+                            for account, algorithm in self.mining.items():
+                                if algoname not in algorithm:
+                                    self.mining[account][algoname] = {}
+                                
+                                miner_list = await self.client.async_get_mining_worker_list(algo=algoname, userName=account)
+                                if miner_list:
+                                    workers_list = miner_list.get("workerDatas", [])
+                                    if workers_list:
+                                        self.mining[account][algoname].update({ "workers": workers_list })
+                                        _LOGGER.debug(f"Mining workers updated for {account} ({algoname}) from binance.{self.tld}")
+        
+                                    status_info = await self.client.async_get_mining_status(algo=algoname, userName=account)
+                                    if status_info:
+                                        self.mining[account][algoname].update({ "status": status_info })
+                                        _LOGGER.debug(f"Mining status updated for {account} ({algoname}) from binance.{self.tld}")                               
+                    
+            return True
+
+        except (BinanceAPIException, BinanceRequestException) as e:
+            raise UpdateFailed from e
+
+            
+class BinanceDataWallet(DataUpdateCoordinator):
+    
+    def __init__(self, hass, api_key, api_secret, tld):
+        """Initialize."""
+        super().__init__(hass, _LOGGER, name="BinanceDataWallet", update_interval=timedelta(minutes=MIN_TIME_BETWEEN_UPDATES))
+        
         self.client = BinancePoolClient(api_key, api_secret, tld=tld)
         self.coins = {}
         self.balances = []
         self.funding = []
         self.savings = {}
         self.tickers = {}
-        self.mining = {}
         self.tld = tld
         
-        if miners: 
-            self.mining = { "accounts": {} }
-            for account in miners:
-                self.mining["accounts"] = { account: {} }
-        
-        
-    @Throttle(MIN_TIME_BETWEEN_UPDATES)
-    async def async_update(self):
-        _LOGGER.debug(f"Fetching data from binance.{self.tld}")
+    async def async_update_data(self):
+        _LOGGER.debug(f"Fetching wallet data from binance.{self.tld}")
         try:
 
             tasks = [
@@ -303,52 +361,10 @@ class BinanceData:
             return True
         
         except (BinanceAPIException, BinanceRequestException) as e:
-            _LOGGER.error(f"Error fetching data from binance.{self.tld}: {e.message}")
-            return False
+            raise UpdateFailed from e
 
 
-    @Throttle(MIN_TIME_BETWEEN_MINING_UPDATES)
-    async def async_update_mining(self):
-        _LOGGER.debug(f"Fetching mining data from binance.{self.tld}")
-        try:        
-            if "accounts" in self.mining:
-                common_queries = [
-                    self.client.async_get_mining_coinlist(),
-                    self.client.async_get_mining_algolist()
-                ] 
-                
-                res = await asyncio.gather(*common_queries, return_exceptions=True)
-                                    
-                coins, algos = res
-                
-                if coins:
-                    self.coins = coins
-
-                    if algos:
-                        for algo in algos:
-                            algoname = algo["algoName"].lower()
-                            
-                            for account, algorithm in self.mining["accounts"].items():
-                                if algoname not in algorithm:
-                                    self.mining["accounts"][account][algoname] = {}
-                                
-                                miner_list = await self.client.async_get_mining_worker_list(algo=algoname, userName=account)
-                                if miner_list:
-                                    workers_list = miner_list.get("workerDatas", [])
-                                    if workers_list:
-                                        self.mining["accounts"][account][algoname].update({ "workers": workers_list })
-                                        _LOGGER.debug(f"Mining workers updated for {account} ({algoname}) from binance.{self.tld}")
-        
-                                    status_info = await self.client.async_get_mining_status(algo=algoname, userName=account)
-                                    if status_info:
-                                        self.mining["accounts"][account][algoname].update({ "status": status_info })
-                                        _LOGGER.debug(f"Mining status updated for {account} ({algoname}) from binance.{self.tld}")                               
-                    
-            return True
-
-        except (BinanceAPIException, BinanceRequestException) as e:
-            _LOGGER.error(f"Error fetching mining data from binance.{self.tld}: {e.message}")
-            return False                                       
+                               
             
 class BinancePoolClient(AsyncClient):
     MINING_API_URL = 'https://api.binance.{}/sapi'
