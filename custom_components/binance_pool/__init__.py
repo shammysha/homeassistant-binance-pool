@@ -260,7 +260,8 @@ class BinanceDataMining(DataUpdateCoordinator):
         self.client = BinancePoolClient(api_key, api_secret, tld=tld)
         
         self.mining = {}
-
+        self.tld = tld
+        
         for account in miners:
             self.mining = { account: {} }
 
