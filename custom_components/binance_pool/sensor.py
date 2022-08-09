@@ -54,6 +54,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         return
     
     elif all(i in discovery_info for i in ["name", "coin", "free", "locked", "freeze", "native"]):
+        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
         name = discovery_info["name"]
         coin = discovery_info["coin"]
         free = discovery_info["free"]
@@ -61,11 +62,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         freeze = discovery_info["freeze"]
         native = discovery_info["native"]
 
-        sensor = BinanceSensor(
-            hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, coin, free, locked, freeze, native
-        )
+        sensor = BinanceSensor(coordinator, name, coin, free, locked, freeze, native)
         
     elif all(i in discovery_info for i in ["name", "asset", "free", "locked", "freeze", "withdrawing", "native"]):
+        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
         name = discovery_info["name"]
         coin = discovery_info["asset"]
         free = discovery_info["free"]
@@ -74,11 +74,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         native = discovery_info["native"]
         withdrawing = discovery_info["withdrawing"]
 
-        sensor = BinanceFundingSensor(
-            hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, coin, free, locked, freeze, withdrawing, native
-        )
+        sensor = BinanceFundingSensor(coordinator, name, coin, free, locked, freeze, withdrawing, native)
         
     elif all(i in discovery_info for i in ["name", "coin", "total", "fixed", "flexible", "native"]):
+        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
         name = discovery_info["name"]
         coin = discovery_info["coin"]
         total = discovery_info["total"]
@@ -86,19 +85,19 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         flexible = discovery_info["flexible"]
         native = discovery_info["native"]
 
-        sensor = BinanceSavingsSensor(
-            hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, coin, total, fixed, flexible, native
-        )        
+        sensor = BinanceSavingsSensor(coordinator, name, coin, total, fixed, flexible, native)        
         
     elif all(i in discovery_info for i in ["name", "symbol", "price"]):
+        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
         name = discovery_info["name"]
         symbol = discovery_info["symbol"]
         price = discovery_info["price"]
 
-        sensor = BinanceExchangeSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, symbol, price)
+        sensor = BinanceExchangeSensor(coordinator, name, symbol, price)
 
 
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "workerName", "status", "hashRate", "dayHashRate", "rejectRate", "lastShareTime"]):
+        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING]        
         name = discovery_info["name"]
         account = discovery_info["account"]
         algorithm = discovery_info["algorithm"]
@@ -109,9 +108,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         reject = discovery_info["rejectRate"]
         update = discovery_info["lastShareTime"]
 
-        sensor = BinanceWorkerSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING], name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
+        sensor = BinanceWorkerSensor(coordinator, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
 
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "fifteenMinHashRate", "dayHashRate", "validNum", "invalidNum", "unknown", "invalid", "inactive"]):
+        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING]
         name = discovery_info["name"]
         account = discovery_info["account"]
         algorithm = discovery_info["algorithm"]
@@ -123,9 +123,11 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         invalid = discovery_info["invalid"]
         inactive = discovery_info["inactive"]
 
-        sensor = BinanceStatusSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING], name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive)
+        sensor = BinanceStatusSensor(coordinator, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive)
         
     elif all(i in discovery_info for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday", "native"]):
+        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING]
+        wallet = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]
         name = discovery_info["name"]
         account = discovery_info["account"]
         algorithm = discovery_info["algorithm"]
@@ -134,7 +136,8 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         earnings = discovery_info["profitYesterday"]
         native = discovery_info["native"]
         
-        sensor = BinanceProfitSensor(hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING], hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET], name, account, algorithm, coin, estimate, earnings, native)        
+        
+        sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
 
     async_add_entities([sensor], True)
 
@@ -728,6 +731,7 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
         self._native_earnings = {}
         self._native_estimate = {}
         self._wallet = wallet
+        
     @property
     def name(self):
         """Return the name of the sensor."""
@@ -771,7 +775,6 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
                 data[f"Native estimate in {asset}"] = exchange            
         
         return data
-        
         
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
