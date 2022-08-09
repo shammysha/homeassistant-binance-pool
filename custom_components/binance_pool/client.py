@@ -1,6 +1,10 @@
+import logging
+
 from aiohttp import ClientResponse
 from binance.client import AsyncClient
 from binance.exceptions import BinanceAPIException, BinanceRequestException
+
+_LOGGER = logging.getLogger(__name__)
 
 class BinancePoolClient(AsyncClient):
     MINING_API_URL = 'https://api.binance.{}/sapi'
@@ -24,6 +28,8 @@ class BinancePoolClient(AsyncClient):
     async def _handle_response(self, response: ClientResponse):
         try:
             res = await super()._handle_response(response)
+            
+            _LOGGER.debug(f"RESPONSE IS {res}")
             
             if res["code"] != 0 or "data" not in res:
                 txt = await response.text()
