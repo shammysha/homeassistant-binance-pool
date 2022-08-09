@@ -264,7 +264,7 @@ class BinanceDataMining(DataUpdateCoordinator):
         for account in miners:
             self.mining = { account: {} }
 
-    async def async_update_data(self):
+    async def _async_update_data(self):
         _LOGGER.debug(f"Fetching mining data from binance.{self.tld}")
 
         try:        
