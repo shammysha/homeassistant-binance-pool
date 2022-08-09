@@ -22,7 +22,7 @@ class BinancePoolClient(AsyncClient):
         return self.BALANCES_API_URL.format(self.tld) + '/' + self.BALANCES_API_VERSION + '/capital/' + path
         
     async def _handle_response(self, response: ClientResponse):
-        answer = super()._handle_response(response)
+        answer = await super()._handle_response(response)
         
         if answer["code"] != 0 or "data" not in answer:
             raise BinanceRequestException('Invalid Response: %s' % response.text)

@@ -26,7 +26,7 @@ from .const import (
 
 from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
 
-__version__ = "1.5.7"
+__version__ = "1.5.8"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -248,7 +248,11 @@ class BinanceDataMining(DataUpdateCoordinator):
                 ] 
                 
                 res = await asyncio.gather(*common_queries, return_exceptions=True)
-                                    
+                for r in res:
+                    if isinstance(r, Exception): 
+                        await self.client.close_connection()
+                        raise r
+                                                        
                 coins, algos = res
                 
                 if coins:
@@ -308,6 +312,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
             res = await asyncio.gather(*tasks, return_exceptions=True)
             for r in res:
                 if isinstance(r, Exception):
+                    await self.client.close_connection()
                     raise r
                 
             balances, funding, savings, prices = res
