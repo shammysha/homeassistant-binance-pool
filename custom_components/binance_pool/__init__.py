@@ -30,7 +30,7 @@ from .const import (
     COORDINATOR_MINING,
     COORDINATOR_WALLET    
 )
-__version__ = "1.5.1"
+__version__ = "1.5.2"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
