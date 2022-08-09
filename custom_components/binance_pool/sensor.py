@@ -421,6 +421,8 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
                     
                         break
 
+        self.async_write_ha_state()
+
 class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
@@ -488,7 +490,8 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
                 break
 
    
-             
+        self.async_write_ha_state()
+        
 class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
@@ -595,6 +598,8 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
                             
         if not exists:
             self._state = None 
+          
+        self.async_write_ha_state()          
             
 class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
@@ -700,7 +705,10 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
                 
         if not exists:
             self._state = 0
-            
+          
+          
+        self.async_write_ha_state()
+                    
 class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
 
@@ -852,4 +860,6 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
                 break
                             
         if not exists:
-            self._state = None           
+            self._state = None   
+            
+        self.async_write_ha_state()

@@ -30,7 +30,7 @@ from .const import (
     COORDINATOR_MINING,
     COORDINATOR_WALLET    
 )
-__version__ = "1.5.4"
+__version__ = "1.5.5"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -166,7 +166,7 @@ async def async_setup(hass, config):
         )
                     
 
-    if hasattr(binance_data_wallet.data, "tickers"):
+    if hasattr(binance_data_wallet, "tickers"):
         for ticker in binance_data_wallet.tickers:
             if not tickers or ticker["symbol"] in tickers:
                 ticker["name"] = name
@@ -259,11 +259,10 @@ class BinanceDataMining(DataUpdateCoordinator):
         super().__init__(hass, _LOGGER, name="BinanceDataMining", update_interval=timedelta(minutes=MIN_TIME_BETWEEN_MINING_UPDATES))
         self.client = BinancePoolClient(api_key, api_secret, tld=tld)
         
-        self.mining = {}
         self.tld = tld
         
         for account in miners:
-            self.mining = { account: {} }
+            self.mining[account] = {}
 
     async def _async_update_data(self):
         _LOGGER.debug(f"Fetching mining data from binance.{self.tld}")
