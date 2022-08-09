@@ -30,7 +30,7 @@ from .const import (
     COORDINATOR_MINING,
     COORDINATOR_WALLET    
 )
-__version__ = "1.5.2"
+__version__ = "1.5.3"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -322,7 +322,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
         self.tickers = {}
         self.tld = tld
         
-    async def async_update_data(self):
+    async def _async_update_data(self):
         _LOGGER.debug(f"Fetching wallet data from binance.{self.tld}")
         try:
 
