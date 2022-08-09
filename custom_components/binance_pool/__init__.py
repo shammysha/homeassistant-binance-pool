@@ -26,7 +26,7 @@ from .const import (
 
 from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
 
-__version__ = "1.5.8"
+__version__ = "1.5.9"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
