@@ -38,10 +38,12 @@ CONFIG_ENTRY_SCHEMA = vol.Schema(
 
 CONFIG_SCHEMA = vol.Schema(
     {
-        DOMAIN: vol.Schema(
-            {
-               **CONFIG_ENTRY_SCHEMA.schema         
-            }
+        vol.Optional(DOMAIN): vol.Any(
+            vol.Equal({}),
+            vol.All(
+               cv.ensure_list,
+               [CONFIG_ENTRY_SCHEMA]         
+            )
         )
     },
     extra=vol.ALLOW_EXTRA
