@@ -29,7 +29,7 @@ from .const import (
 
 from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
 
-__version__ = "1.6.0"
+__version__ = "1.6.1"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -48,6 +48,9 @@ async def async_setup(hass, config):
     }
     
     for item in domain_config:
+        
+        _LOGGER.debug('CFG IS: %s', item)
+        
         name = item[CONF_NAME]
         
         _LOGGER.debug('Entry with name "%s" from YAML', name)
