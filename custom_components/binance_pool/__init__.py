@@ -3,13 +3,16 @@ import logging
 import asyncio
 import copy
 
-from homeassistant.const import CONF_API_KEY, CONF_NAME
-from homeassistant.helpers.discovery import async_load_platform
-from homeassistant.util import Throttle
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator, UpdateFailed
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from typing import Dict, Final, Mapping, Optional, TYPE_CHECKING, Tuple, Type
 
-from .schemas import CONFIG_SCHEMA
+from homeassistant.config_entries import ConfigEntry, SOURCE_IMPORT
+from homeassistant.const import CONF_API_KEY, CONF_NAME
+from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers.discovery import async_load_platform
+from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator, UpdateFailed
+from homeassistant.util import Throttle
+
+from .schemas import CONFIG_SCHEMA, CONFIG_ENTRY_SCHEMA
 from .const import (
     DOMAIN,
     CONF_API_SECRET,
@@ -26,34 +29,85 @@ from .const import (
 
 from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
 
-__version__ = "1.5.12"
+__version__ = "1.6.0"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
-    api_key = config[DOMAIN][CONF_API_KEY]
-    api_secret = config[DOMAIN][CONF_API_SECRET]
-    name = config[DOMAIN].get(CONF_NAME)
-    balances = config[DOMAIN].get(CONF_BALANCES)
-    tickers = config[DOMAIN].get(CONF_EXCHANGES)
-    miners = config[DOMAIN].get(CONF_MINING)
-    native_currency = config[DOMAIN].get(CONF_NATIVE_CURRENCY)
-    tld = config[DOMAIN].get(CONF_DOMAIN)
-
-    binance_data_wallet = BinanceDataWallet(hass, api_key, api_secret, tld)
-    binance_data_mining = BinanceDataMining(hass, api_key, api_secret, tld, miners)
-
+    domain_config = config.get(DOMAIN)
+    if not domain_config:
+        return True
+    
+    yaml_config = {} 
+    domain_data = {}
+    
     hass.data[DOMAIN] = { 
-        'config': config,
-        'coordinator': {
-            COORDINATOR_MINING: binance_data_mining,
-            COORDINATOR_WALLET: binance_data_wallet
-        } 
+        'data': domain_data,
+        'yaml': yaml_config,
     }
     
+    for item in domain_config:
+        name = item[CONF_NAME]
+        
+        _LOGGER.debug('Entry with name "%s" from YAML', name)
+        
+        existing_entry = find_existing_entry(hass, name)
+        if existing_entry:
+            if existing_entry.source != SOURCE_IMPORT:
+                yaml_config[name] = item
+                _LOGGER.debug('Skipping existing import binding for "%s"', name)
+            else: 
+                _LOGGER.warning("YAML config for %s is overridden by another config entry!", name)                
+            
+            continue
+                
+        yaml_config[name] = item        
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT}, data={CONF_NAME: name}
+            )
+        )        
+    
+    if yaml_config:
+        _LOGGER.debug("YAML names: %s", '"' + '", "'.join(yaml_config.keys()) + '"')
+    else:
+        _LOGGER.debug("No configuration added from YAML")
+
+    return True
+    
+async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
+    entry_id = config_entry.entry_id
+    name = config_entry.get(CONF_NAME)
+
+    config = {}
+
+    if config_entry.source == SOURCE_IMPORT:
+        yaml_config = hass.data[DOMAIN].get('yaml')
+
+        if not (yaml_config and name in yaml_config):
+            _LOGGER.info(f"[{name}] Removing entry {entry_id} " f"after removal from YAML configuration")
+            
+            hass.async_create_task(hass.config_entries.async_remove(entry_id))
+            return False
+        else:
+            config = CONFIG_ENTRY_SCHEMA({**config_entry.data, **config_entry.options})
+        
+    _LOGGER.debug(f"[{name}] Setting up config entry")
+
+    binance_data_wallet = BinanceDataWallet(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN], 
+    binance_data_mining = BinanceDataMining(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN], config.get(CONF_MINING))
+
+    hass.data[DOMAIN].update({
+        'config': config,
+        'coordinator': { 
+            COORDINATOR_MINING: binance_data_mining,
+            COORDINATOR_WALLET: binance_data_wallet
+        }
+    })
+    
     upddata = [ binance_data_wallet.async_config_entry_first_refresh() ]
-    if miners:
+    if config[CONF_MINING]:
         upddata.append(
             binance_data_mining.async_config_entry_first_refresh()
         )
@@ -65,8 +119,6 @@ async def async_setup(hass, config):
             await binance_data_wallet.client.close_connection()
             await binance_data_mining.client.close_connection()
             raise r
-
-
     
     if hasattr(binance_data_wallet, "balances"):
         for balance in binance_data_wallet.balances:
@@ -222,6 +274,13 @@ async def async_setup(hass, config):
                     )                  
                                      
     return True
+   
+   
+def find_existing_entry(hass, name) -> Optional[ConfigEntry]:
+    existing_entries = hass.config_entries.async_entries(DOMAIN)
+    for config_entry in existing_entries:
+        if config_entry.data[CONF_NAME] == name:
+            return config_entry   
     
 class BinanceDataMining(DataUpdateCoordinator):
     def __init__(self, hass, api_key, api_secret, tld, miners = []):
