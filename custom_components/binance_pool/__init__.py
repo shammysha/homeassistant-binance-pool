@@ -29,13 +29,15 @@ from .const import (
 
 from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
 
-__version__ = "1.6.1"
+__version__ = "1.6.2"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
     domain_config = config.get(DOMAIN)
+    _LOGGER.debug('DOMAIN_CONFIG IS: %s', domain_config)
+    
     if not domain_config:
         return True
     
@@ -48,7 +50,6 @@ async def async_setup(hass, config):
     }
     
     for item in domain_config:
-        
         _LOGGER.debug('CFG IS: %s', item)
         
         name = item[CONF_NAME]
