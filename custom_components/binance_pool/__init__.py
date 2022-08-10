@@ -95,7 +95,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
         
     _LOGGER.debug(f"[{name}] Setting up config entry")
 
-    binance_data_wallet = BinanceDataWallet(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN], 
+    binance_data_wallet = BinanceDataWallet(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN])
     binance_data_mining = BinanceDataMining(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN], config.get(CONF_MINING))
 
     hass.data[DOMAIN].update({
