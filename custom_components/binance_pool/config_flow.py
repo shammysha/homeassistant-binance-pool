@@ -278,7 +278,7 @@ class BinancePoolOptionsFlow(OptionsFlow):
         
             from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
                             
-            client = BinancePoolClient(self.user_input[CONF_API_KEY], user_input[CONF_API_SECRET], tld=user_input[CONF_DOMAIN])
+            client = BinancePoolClient(user_input[CONF_API_KEY], user_input[CONF_API_SECRET], tld=user_input[CONF_DOMAIN])
      
             tasks = [
                 client.async_get_capital_balances(),
@@ -347,7 +347,17 @@ class BinancePoolOptionsFlow(OptionsFlow):
             )
     
         else:
+            _LOGGER.debug('data is: %s', config_entry.data)
+            _LOGGER.debug('options is: %s', config_entry.options)
+            
             user_input = {}
+            
+            self.save_data = {
+                CONF_NAME: config_entry.data.get(CONF_NAME, DEFAULT_NAME),
+                CONF_API_KEY: config_entry.data.get(CONF_API_KEY, ''),
+                CONF_API_SECRET: config_entry.data.get(CONF_API_SECRET, ''),
+                CONF_DOMAIN: config_entry.data.get(CONF_DOMAIN, DEFAULT_DOMAIN)
+            }
             
         return self.async_show_form(
             step_id="init",
@@ -388,6 +398,13 @@ class BinancePoolOptionsFlow(OptionsFlow):
     
         else:
             user_input = {}
+            
+            self.save_data.update({
+                CONF_BALANCES: config_entry.data.get(CONF_BALANCES, DEFAULT_BALANCES),
+                CONF_EXCHANGES: config_entry.data.get(CONF_EXCHANGES, DEFAULT_EXCHANGES),
+                CONF_NATIVE_CURRENCY: config_entry.data.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY),
+                CONF_MINING: re.split(r'p\s\,]+', config_entry.data.get(CONF_MINING, []))
+            })            
             
         return self.async_show_form(
             step_id = 'options',
