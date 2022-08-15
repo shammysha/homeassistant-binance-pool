@@ -374,15 +374,8 @@ class BinancePoolOptionsFlow(OptionsFlow):
                 CONF_NATIVE_CURRENCY: user_input.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY),
                 CONF_MINING: re.split(r'p\s\,]+', user_input.get(CONF_MINING, []))
             })
-                
-            entry = await self.async_set_unique_id(self.save_data[CONF_NAME])
-            if entry:
-                self.hass.config.entries.async_update_entry(entry, data=self.save_data)
-                
-                return self.async_abort(reason='account_updated')
-             
-            else :
-                return self.async_create_entry(title="", data=self.save_data)
+            
+            self.async_update_entry(config_entry, unique_id=self.save_data[CONF_NAME], data=self.save_data)
     
         else:
             user_input = {}
