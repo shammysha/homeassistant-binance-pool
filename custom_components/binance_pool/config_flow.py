@@ -1,3 +1,4 @@
+import logging
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
 
@@ -47,7 +48,8 @@ from .const import (
     DEFAULT_EXCHANGES,
     DEFAULT_CURRENCY
 )
-from binance_pool import _LOGGER
+
+_LOGGER = logging.getLogger(__name__)
 
 class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION: Final[int] = FLOW_VERSION
