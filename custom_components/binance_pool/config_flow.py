@@ -90,7 +90,7 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
                 await client.close_connection()
                 
             if not errors:
-                return self.save_config(user_input)
+                return self._save_config(user_input)
     
         else:
             user_input = {}
