@@ -47,6 +47,7 @@ from .const import (
     DEFAULT_EXCHANGES,
     DEFAULT_CURRENCY
 )
+from binance_pool import _LOGGER
 
 class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION: Final[int] = FLOW_VERSION
@@ -64,7 +65,6 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
         errors = ()
         
         if user_input:
-            
             try:
                 name = user_input[CONF_NAME]
             except (TypeError, ValueError, LookupError):
@@ -73,6 +73,8 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
             else:
                 await self.async_set_unique_id(name)
                 self._abort_if_unique_id_configured()
+                
+                _LOGGER.debug('user_input is: %s', user_input)
                 
                 api_key = user_input[CONF_API_KEY]
                 api_secret = user_input[CONF_API_SECRET]
