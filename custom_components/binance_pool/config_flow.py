@@ -113,7 +113,7 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
         await self.async_set_unique_id(user_input[CONF_NAME])
         self._abort_if_unique_id_configured()
         
-        return self._save_config({CONF_NAME: user_input[CONF_NAME]})
+        return self._save_config(user_input)
 
 
     def _save_config(self, config: Dict[str, Any]) -> Dict[str, Any]:
