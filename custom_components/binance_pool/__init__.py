@@ -72,7 +72,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.7"
+__version__ = "1.6.8"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -120,6 +120,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     name = config_entry.get(CONF_NAME)
 
     config = {}
+    
+    _LOGGER.debug("hass data is: %s", hass.data[DOMAIN])
 
     if config_entry.source == SOURCE_IMPORT:
         yaml_config = hass.data[DOMAIN].get('yaml')
