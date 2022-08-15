@@ -47,7 +47,6 @@ from .const import (
     DEFAULT_EXCHANGES,
     DEFAULT_CURRENCY
 )
-from binance_pool.const import CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY
 
 class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION: Final[int] = FLOW_VERSION
