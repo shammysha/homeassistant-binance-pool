@@ -73,7 +73,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.30"
+__version__ = "1.6.31"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -293,7 +293,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     
                         sensors.append(status)
                         
-    hass.data.setDefault(DOMAIN, {})[entry_id] = {
+    hass.data.setdefault(DOMAIN, {})[entry_id] = {
         'config': config,
         'coordinator': { 
             COORDINATOR_MINING: binance_data_mining,
