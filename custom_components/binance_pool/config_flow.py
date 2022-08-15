@@ -109,7 +109,25 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
     async def async_step_import(self, user_input: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if not user_input:
             return self.async_abort(reason="empty_config")
-
+        
+        if not ( user_input[CONF_API_KEY] and user_input[CONF_API_SECRET]):
+            return self.async_abort(reason="empty auth data")
+        
+        if not user_input[CONF_NAME]:
+            user_input[CONF_NAME] = DEFAULT_NAME        
+            
+        if not user_input[CONF_DOMAIN]:
+            user_input[CONF_DOMAIN] = DEFAULT_DOMAIN            
+            
+        if not user_input[CONF_BALANCES]:
+            user_input[CONF_BALANCES] = DEFAULT_BALANCES
+            
+        if not user_input[CONF_EXCHANGES]:
+            user_input[CONF_EXCHANGES] = DEFAULT_EXCHANGES            
+            
+        if not user_input[CONF_NATIVE_CURRENCY]:
+            user_input[CONF_NATIVE_CURRENCY] = DEFAULT_CURRENCY            
+                         
         await self.async_set_unique_id(user_input[CONF_NAME])
         self._abort_if_unique_id_configured()
         
