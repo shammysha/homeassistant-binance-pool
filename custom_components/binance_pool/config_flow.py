@@ -376,8 +376,7 @@ class BinancePoolOptionsFlow(OptionsFlow):
             })
             
             self.hass.config_entries.async_update_entry(config_entry, unique_id=self.save_data[CONF_NAME], data=self.save_data)
-            
-            return True
+            return self.async_create_entry(title='', data=self.save_data)
     
         else:
             user_input = {}
