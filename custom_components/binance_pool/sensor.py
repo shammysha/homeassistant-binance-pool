@@ -107,7 +107,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             sensor = BinanceSavingsSensor(coordinator, name, coin, total, fixed, flexible, native)        
             
         elif all(i in sensor_data for i in ["name", "symbol", "price"]):
-            coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
+            coordinator = coordinators[COORDINATOR_WALLET]        
             name = sensor_data["name"]
             symbol = sensor_data["symbol"]
             price = sensor_data["price"]
