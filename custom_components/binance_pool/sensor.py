@@ -68,7 +68,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     sensors = hass.data[DOMAIN][entry_id]['sensors']
     coordinators = hass.data[DOMAIN][entry_id]['coordinator']
     
-    for sensor_data in hass.data[DOMAIN][entry_id][sensors]:
+    for sensor_data in sensors:
         if sensor_data is None:
             continue
         
