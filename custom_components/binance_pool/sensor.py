@@ -1,11 +1,25 @@
 """
 Binance sensor
 """
-from datetime import datetime
+from datetime import (
+    datetime
+)
 
-from homeassistant.const import ATTR_ATTRIBUTION
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.update_coordinator import (CoordinatorEntity, DataUpdateCoordinator, UpdateFailed)
+from homeassistant.const import (
+    ATTR_ATTRIBUTION
+)
+
+from homeassistant.core import ( 
+    callback
+)
+
+from homeassistant.components.sensor import (
+    SensorEntity
+)
+
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity
+)
 
 from .const import (
     DOMAIN,
@@ -199,6 +213,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
          
         return data
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         for balance in self.coordinator.balances:
             if balance["coin"] == self._coin:
@@ -292,6 +307,7 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
          
         return data
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -398,6 +414,7 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
          
         return data
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -467,6 +484,7 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
             ATTR_ATTRIBUTION: ATTRIBUTION,
         }
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -564,7 +582,7 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
         
         return data
         
-        
+    @callback        
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
 
@@ -664,7 +682,7 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
             ATTR_ALGO: f"{self._algorithm}",
         }
         
-        
+    @callback        
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         exists = False
@@ -776,6 +794,7 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
         
         return data
         
+    @callback        
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
 

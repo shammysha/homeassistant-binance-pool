@@ -1,8 +1,17 @@
 import logging
 
-from aiohttp import ClientResponse
-from binance.client import AsyncClient
-from binance.exceptions import BinanceAPIException, BinanceRequestException
+from aiohttp import (
+    ClientResponse
+)
+
+from binance.client import (
+    AsyncClient
+)
+
+from binance.exceptions import (
+    BinanceAPIException, 
+    BinanceRequestException
+)
 
 _LOGGER = logging.getLogger(__name__)
 

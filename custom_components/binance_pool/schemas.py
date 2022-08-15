@@ -1,6 +1,11 @@
 import voluptuous as vol
 import homeassistant.helpers.config_validation as cv
-from homeassistant.const import CONF_API_KEY, CONF_NAME
+
+from homeassistant.const import (
+    CONF_API_KEY, 
+    CONF_NAME
+)
+
 from .const import (
     DOMAIN,
     DEFAULT_NAME,
@@ -17,7 +22,7 @@ from .const import (
 CONFIG_ENTRY_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-        vol.Optional(CONF_DOMAIN, default=DEFAULT_DOMAIN): cv.string,
+        vol.Required(CONF_DOMAIN, default=DEFAULT_DOMAIN): vol.In({'com': 'binance.com', 'us': 'binance.us'}),
         vol.Optional(CONF_NATIVE_CURRENCY, default=DEFAULT_CURRENCY): vol.All(
             cv.ensure_list, [cv.string]
         ),
@@ -31,7 +36,7 @@ CONFIG_ENTRY_SCHEMA = vol.Schema(
         ),
         vol.Optional(CONF_MINING, default=[]): vol.All(
             cv.ensure_list, [cv.string]
-        )                
+        )
     },
     extra=vol.ALLOW_EXTRA
 )
@@ -48,5 +53,4 @@ CONFIG_SCHEMA = vol.Schema(
     },
     extra=vol.ALLOW_EXTRA
 )
-
 
