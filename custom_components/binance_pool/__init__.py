@@ -72,7 +72,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.5"
+__version__ = "1.6.6"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -83,13 +83,8 @@ async def async_setup(hass, config):
     if not domain_config:
         return True
     
-    yaml_config = {} 
-    domain_data = {}
-    
-    hass.data[DOMAIN] = { 
-        'data': domain_data,
-        'yaml': yaml_config,
-    }
+    yaml_config = {}
+    hass.data[DOMAIN] = { 'yaml': yaml_config }
     
     for item in domain_config:
         name = item[CONF_NAME]
@@ -98,7 +93,7 @@ async def async_setup(hass, config):
         
         existing_entry = find_existing_entry(hass, name)
         if existing_entry:
-            if existing_entry.source != SOURCE_IMPORT:
+            if existing_entry.source == SOURCE_IMPORT:
                 yaml_config[name] = item
                 _LOGGER.debug('Skipping existing import binding for "%s"', name)
             else: 
