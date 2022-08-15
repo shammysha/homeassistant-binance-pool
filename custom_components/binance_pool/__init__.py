@@ -73,7 +73,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.24"
+__version__ = "1.6.26"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -130,8 +130,12 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             
             hass.async_create_task(hass.config_entries.async_remove(entry_id))
             return False
-        else:
-            config = CONFIG_ENTRY_SCHEMA({**config_entry.data, **config_entry.options})
+        
+        config = yaml_config[name]
+
+    else:
+        config = CONFIG_ENTRY_SCHEMA({**config_entry.data, **config_entry.options})        
+
         
     _LOGGER.debug(f"[{name}] Setting up config entry")
 

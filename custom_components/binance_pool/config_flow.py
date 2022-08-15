@@ -54,6 +54,14 @@ _LOGGER = logging.getLogger(__name__)
 class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION: Final[int] = FLOW_VERSION
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        self.save_data = {}
+        self.api_data = False
+        self.coins = []    
+        self.asstets = []
+    
     def _check_entry_exists(self, name: str):
         current_entries = self._async_current_entries()
 
@@ -76,25 +84,77 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
                 await self.async_set_unique_id(name)
                 self._abort_if_unique_id_configured()
                 
-                _LOGGER.debug('user_input is: %s', user_input)
-                
                 api_key = user_input[CONF_API_KEY]
                 api_secret = user_input[CONF_API_SECRET]
                 tld = user_input[CONF_DOMAIN]
                 
-                from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
+                try: 
+                    from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
+                    client = BinancePoolClient(api_key, api_secret, tld=tld)
                     
-                client = BinancePoolClient(api_key, api_secret, tld=tld)
-                try:
-                    await client.async_get_capital_balances()
-                except (BinanceAPIException, BinanceRequestException):
+                    tasks = [
+                        client.async_get_capital_balances(),
+                        client.get_all_tickers()
+                    ]
+
+                    res = await gather(*tasks, return_exceptions=True)
+                    for r in res:
+                        if isinstance(r, Exception):
+                            await client.close_connection()
+                            raise r
+                        
+                except (BinanceAPIException, BinanceRequestException): 
                     errors['base'] = 'api_error'
+
+                else:
+                    coins, tickers = res   
+            
+                    self.coins = [ x['coin'] for y, x in enumerate(coins) ]
+                    self.assets = [ x['symbol'] for y, x in enumerate(tickers) ]
             
             finally:
                 await client.close_connection()
                 
             if not errors:
-                return self._save_config(user_input)
+                self.save_data.update({
+                    CONF_NAME: user_input[CONF_NAME],
+                    CONF_API_KEY: user_input[CONF_API_KEY],
+                    CONF_API_SECRET: user_input[CONF_API_SECRET],
+                    CONF_DOMAIN: user_input[CONF_DOMAIN],
+                    CONF_BALANCES: DEFAULT_BALANCES,
+                    CONF_EXCHANGES: DEFAULT_EXCHANGES,
+                    CONF_NATIVE_CURRENCY: DEFAULT_CURRENCY,
+                    CONF_MINING: []
+                })                
+                
+                return self.async_show_form(
+                    step_id = 'options',
+                    data_schema = vol.Schema({
+                        vol.Optional(CONF_BALANCES, default=self.save_data.get(CONF_BALANCES, DEFAULT_BALANCES)): selector({ 
+                            'select': {
+                                'options': self.coins,
+                                'multiple': True,
+                                'mode': 'dropdown'
+                            }
+                        }),
+                        vol.Optional(CONF_EXCHANGES, default=self.save_data.get(CONF_EXCHANGES, DEFAULT_EXCHANGES)): selector({ 
+                            'select': {
+                                'options': self.assets,
+                                'multiple': True,
+                                'mode': 'dropdown'
+                            }            
+                        }),
+                        vol.Optional(CONF_NATIVE_CURRENCY, default=self.save_data.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY)): selector({ 
+                            'select': {
+                                'options': self.coins,
+                                'multiple': True,
+                                'mode': 'dropdown'
+                            }            
+                        }),
+                        vol.Optional(CONF_MINING, default=', '.join(self.save_data.get(CONF_MINING, []))): cv.string
+                    }),
+                    errors = errors,
+                )   
     
         else:
             user_input = {}
@@ -109,6 +169,53 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
             }),
             errors=errors
         )
+                
+    async def async_step_options(self, user_input: Optional[ConfigType] = None) -> Dict[str, Any]:
+        errors = {}
+
+        if user_input:    
+            import re
+            
+            self.save_data.update({
+                CONF_BALANCES: user_input.get(CONF_BALANCES, DEFAULT_BALANCES),
+                CONF_EXCHANGES: user_input.get(CONF_EXCHANGES, DEFAULT_EXCHANGES),
+                CONF_NATIVE_CURRENCY: user_input.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY),
+                CONF_MINING: re.split(r'p\s\,]+', user_input.get(CONF_MINING, []))
+            })
+                
+            self._save_config(self.save_data)
+    
+        else:
+            user_input = {}
+            
+        return self.async_show_form(
+            step_id = 'options',
+            data_schema = vol.Schema({
+                vol.Optional(CONF_BALANCES, default=self.save_data.get(CONF_BALANCES, DEFAULT_BALANCES)): selector({ 
+                    'select': {
+                        'options': self.coins,
+                        'multiple': True,
+                        'mode': 'dropdown'
+                    }
+                }),
+                vol.Optional(CONF_EXCHANGES, default=self.save_data.get(CONF_EXCHANGES, DEFAULT_EXCHANGES)): selector({ 
+                    'select': {
+                        'options': self.assets,
+                        'multiple': True,
+                        'mode': 'dropdown'
+                    }            
+                }),
+                vol.Optional(CONF_NATIVE_CURRENCY, default=self.save_data.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY)): selector({ 
+                    'select': {
+                        'options': self.coins,
+                        'multiple': True,
+                        'mode': 'dropdown'
+                    }            
+                }),
+                vol.Optional(CONF_MINING, default=', '.join(self.save_data.get(CONF_MINING, []))): cv.string
+            }),
+            errors = errors,
+        )  
                 
     async def async_step_import(self, user_input: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         if not user_input:
