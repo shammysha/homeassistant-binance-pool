@@ -87,11 +87,11 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
                 api_key = user_input[CONF_API_KEY]
                 api_secret = user_input[CONF_API_SECRET]
                 tld = user_input[CONF_DOMAIN]
-                
+
+                from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
+                client = BinancePoolClient(api_key, api_secret, tld=tld)
+                                    
                 try: 
-                    from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
-                    client = BinancePoolClient(api_key, api_secret, tld=tld)
-                    
                     tasks = [
                         client.async_get_capital_balances(),
                         client.get_all_tickers()
@@ -112,8 +112,8 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
                     self.coins = [ x['coin'] for y, x in enumerate(coins) ]
                     self.assets = [ x['symbol'] for y, x in enumerate(tickers) ]
             
-            finally:
-                await client.close_connection()
+                finally:
+                    await client.close_connection()
                 
             if not errors:
                 self.save_data.update({
