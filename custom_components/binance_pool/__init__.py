@@ -63,7 +63,8 @@ from .const import (
     MIN_TIME_BETWEEN_UPDATES,
     MIN_TIME_BETWEEN_MINING_UPDATES,
     COORDINATOR_MINING,
-    COORDINATOR_WALLET    
+    COORDINATOR_WALLET,
+    FLOW_VERSION    
 )
 
 from .client import (
@@ -72,7 +73,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.20"
+__version__ = "1.6.21"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -315,6 +316,19 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                                      
     return True
    
+   
+# Example migration function
+async def async_migrate_entry(hass, config_entry: ConfigEntry):
+    """Migrate old entry."""
+    _LOGGER.debug("Migrating from version %s to %s", config_entry.version, FLOW_VERSION)
+
+    if config_entry.version != FLOW_VERSION:
+        config_entry.version = FLOW_VERSION
+        hass.config_entries.async_update_entry(config_entry, data={**config_entry.data})
+
+    _LOGGER.info("Migration to version %s successful", config_entry.version)
+
+    return True   
    
 def find_existing_entry(hass, name) -> Optional[ConfigEntry]:
     for config_entry in hass.config_entries.async_entries(DOMAIN):
