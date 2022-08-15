@@ -306,8 +306,6 @@ class BinancePoolOptionsFlow(OptionsFlow):
         errors = {}
 
         if user_input:    
-            self.save_data = {**self._config_entry.options}
-
             await self.async_fetch_api_data(user_input)
 
             self.save_data.update({
