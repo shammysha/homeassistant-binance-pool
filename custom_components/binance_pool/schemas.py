@@ -11,6 +11,8 @@ from .const import (
     DEFAULT_NAME,
     DEFAULT_DOMAIN,
     DEFAULT_CURRENCY,
+    DEFAULT_BALANCES,
+    DEFAULT_EXCHANGES,
     CONF_API_SECRET,
     CONF_BALANCES,
     CONF_EXCHANGES,
@@ -28,10 +30,10 @@ CONFIG_ENTRY_SCHEMA = vol.Schema(
         ),
         vol.Required(CONF_API_KEY): cv.string,
         vol.Required(CONF_API_SECRET): cv.string,
-        vol.Optional(CONF_BALANCES, default=[]): vol.All(
+        vol.Optional(CONF_BALANCES, default=DEFAULT_BALANCES): vol.All(
             cv.ensure_list, [cv.string]
         ),
-        vol.Optional(CONF_EXCHANGES, default=[]): vol.All(
+        vol.Optional(CONF_EXCHANGES, default=DEFAULT_EXCHANGES): vol.All(
             cv.ensure_list, [cv.string]
         ),
         vol.Optional(CONF_MINING, default=[]): vol.All(
@@ -45,6 +47,7 @@ CONFIG_SCHEMA = vol.Schema(
     {
         vol.Optional(DOMAIN): vol.Any(
             vol.Equal({}),
+            vol.Equal(CONFIG_ENTRY_SCHEMA),
             vol.All(
                cv.ensure_list,
                [CONFIG_ENTRY_SCHEMA]         

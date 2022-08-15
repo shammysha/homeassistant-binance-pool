@@ -44,8 +44,10 @@ from .const import (
     DEFAULT_NAME,
     DEFAULT_DOMAIN,
     DEFAULT_BALANCES,
+    DEFAULT_EXCHANGES,
     DEFAULT_CURRENCY
 )
+from binance_pool.const import CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY
 
 class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
     VERSION: Final[int] = FLOW_VERSION
@@ -192,28 +194,28 @@ class BinancePoolOptionsFlow(OptionsFlow):
             return self.async_show_form(
                 step_id = "options",
                 data_schema = vol.Schema({
-                    vol.Optional(CONF_BALANCES): selector({ 
+                    vol.Optional(CONF_BALANCES, default=self.save_data.get(CONF_BALANCES, DEFAULT_BALANCES)): selector({ 
                         'select': {
                             'options': self.coins,
                             'multiple': True,
                             'mode': 'dropdown'
                         }
                     }),
-                    vol.Optional(CONF_EXCHANGES): selector({ 
+                    vol.Optional(CONF_EXCHANGES, default=self.save_data.get(CONF_EXCHANGES, DEFAULT_EXCHANGES)): selector({ 
                         'select': {
                             'options': self.assets,
                             'multiple': True,
                             'mode': 'dropdown'
                         }            
                     }),
-                    vol.Optional(CONF_NATIVE_CURRENCY): selector({ 
+                    vol.Optional(CONF_NATIVE_CURRENCY, default=self.save_data.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY)): selector({ 
                         'select': {
                             'options': self.coins,
                             'multiple': True,
                             'mode': 'dropdown'
                         }            
                     }),
-                    vol.Optional(CONF_MINING, default=mining_to_str): cv.string
+                    vol.Optional(CONF_MINING, default=', '.join(self.save_data.get(CONF_MINING, []))): cv.string
                 }),
                 errors=errors
             )
@@ -244,7 +246,7 @@ class BinancePoolOptionsFlow(OptionsFlow):
             
             self.save_data.update({
                 CONF_BALANCES: user_input.get(CONF_BALANCES, DEFAULT_BALANCES),
-                CONF_EXCHANGES: user_input.get(CONF_EXCHANGES, []),
+                CONF_EXCHANGES: user_input.get(CONF_EXCHANGES, DEFAULT_EXCHANGES),
                 CONF_NATIVE_CURRENCY: user_input.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY),
                 CONF_MINING: re.split(r'p\s\,]+', user_input.get(CONF_MINING, []))
             })
@@ -255,39 +257,37 @@ class BinancePoolOptionsFlow(OptionsFlow):
                 
                 return self.async_abort(reason='account_updated')
              
-            
-            return self.async_create_entry(title="", data=self.save_data)
+            else :
+                return self.async_create_entry(title="", data=self.save_data)
     
         else:
             user_input = {}
             
-        mining_to_str = ', '.join(self.config_entry.get(CONF_MINING, []))            
-            
         return self.async_show_form(
             step_id = 'options',
             data_schema = vol.Schema({
-                vol.Optional(CONF_BALANCES, ): selector({ 
+                vol.Optional(CONF_BALANCES, default=self.save_data.get(CONF_BALANCES, DEFAULT_BALANCES)): selector({ 
                     'select': {
                         'options': self.coins,
                         'multiple': True,
                         'mode': 'dropdown'
                     }
                 }),
-                vol.Optional(CONF_EXCHANGES): selector({ 
+                vol.Optional(CONF_EXCHANGES, default=self.save_data.get(CONF_EXCHANGES, DEFAULT_EXCHANGES)): selector({ 
                     'select': {
                         'options': self.assets,
                         'multiple': True,
                         'mode': 'dropdown'
                     }            
                 }),
-                vol.Optional(CONF_NATIVE_CURRENCY): selector({ 
+                vol.Optional(CONF_NATIVE_CURRENCY, default=self.save_data.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY)): selector({ 
                     'select': {
                         'options': self.coins,
                         'multiple': True,
                         'mode': 'dropdown'
                     }            
                 }),
-                vol.Optional(CONF_MINING, default=mining_to_str): cv.string
+                vol.Optional(CONF_MINING, default=', '.join(self.save_data.get(CONF_MINING, []))): cv.string
             }),
             errors = errors,
         )        
