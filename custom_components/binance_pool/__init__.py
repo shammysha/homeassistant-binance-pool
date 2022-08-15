@@ -72,7 +72,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.8"
+__version__ = "1.6.9"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -117,7 +117,7 @@ async def async_setup(hass, config):
     
 async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     entry_id = config_entry.entry_id
-    name = config_entry.get(CONF_NAME)
+    name = config_entry.data(CONF_NAME)
 
     config = {}
     
