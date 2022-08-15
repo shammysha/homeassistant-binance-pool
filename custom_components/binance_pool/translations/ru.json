@@ -18,12 +18,11 @@
             },
             "options": {
                 "data": {
-                    "balances": "Монеты для отображания баланса",
+                    "balances": "Отслеживаемые балансы кошелька",
                     "exchanges": "Отслеживаемые курсы вылют",
                     "native_currency": "Валюты для пересчета по курсу",
-                    "mining": "Список pool-аккаунтов (через запятую)"
+                    "miners": "Список pool-аккаунтов (через запятую)"
                 },
-                "description": "Настройки автоматически создаваемых сенсоров.\n\n По умолчанию:\n\tbalances: [BTC, ETH],\n\texchanges: [BTCUSDT, ETHUSDT],\n\tnative_currency: [USDT]", 
                 "title": "Настройки сенсоров"                
             }
         }
@@ -51,9 +50,8 @@
                     "balances": "Монеты для отображания баланса",
                     "exchanges": "Отслеживаемые курсы вылют",
                     "native_currency": "Валюты для пересчета по курсу",
-                    "mining": "Список pool-аккаунтов (через запятую)"
+                    "miners": "Список pool-аккаунтов (через запятую)"
                 },
-                "description": "Настройки автоматически создаваемых сенсоров.\n\n По умолчанию:\n\tbalances: [BTC, ETH],\n\texchanges: [BTCUSDT, ETHUSDT],\n\tnative_currency: [USDT]", 
                 "title": "Настройки сенсоров"
             }
         }

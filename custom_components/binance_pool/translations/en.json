@@ -21,9 +21,8 @@
                     "balances": "Coins to display balance",
                     "exchanges": "Exchange rates to be monitored",
                     "native_currency": "Coins for automatic conversion",
-                    "mining": "Pool accounts (comma separated)"
+                    "miners": "Pool accounts (comma separated)"
                 },
-                "description": "Settings for automatically generated sensors.\n\n Default:\n\tbalances: [BTC, ETH],\n\texchanges: [BTCUSDT, ETHUSDT],\n\tnative_currency: [USDT]", 
                 "title": "Sensors settings"
             }           
         }
@@ -48,12 +47,11 @@
             },        	
             "options": {
                 "data": {
-                    "balances": "Coins to display balance",
+                    "balances": "Spot wallet balances to be monitored",
                     "exchanges": "Exchange rates to be monitored",
                     "native_currency": "Coins for automatic conversion",
-                    "mining": "Pool accounts (comma separated)"
+                    "miners": "Pool accounts (comma separated)"
                 },
-                "description": "Settings for automatically generated sensors.\n\n Default:\n\tbalances: [BTC, ETH],\n\texchanges: [BTCUSDT, ETHUSDT],\n\tnative_currency: [USDT]", 
                 "title": "Sensors settings"
             }
         }

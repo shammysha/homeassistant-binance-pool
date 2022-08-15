@@ -183,7 +183,7 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_MINING: re.split(r'p\s\,]+', user_input.get(CONF_MINING, []))
             })
                 
-            self._save_config(self.save_data)
+            return self._save_config(self.save_data)
     
         else:
             user_input = {}
