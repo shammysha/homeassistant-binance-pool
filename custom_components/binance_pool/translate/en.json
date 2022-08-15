@@ -13,7 +13,7 @@
                     "api_secret": "Binance API secret",
                     "domain": "Register domain"
                 },
-                "description": "Come up with a unique name for the integration.\n\nSpecify the domain in which the account is registered, as well as data for connecting to the Binance API.\n\nConnection data can be obtained in the profile settings ("API Management\")",
+                "description": "Come up with a unique name for the integration.\n\nSpecify the domain in which the account is registered, as well as data for connecting to the Binance API.\n\nConnection data can be obtained in the profile settings (\"API Management\")",
                 "title": "Main Settings"
             }
         }

@@ -206,8 +206,6 @@ class BinancePoolOptionsFlow(OptionsFlow):
                 CONF_DOMAIN: user_input[CONF_DOMAIN]
             })
 
-            mining_to_str = ', '.join(self.save_data.get(CONF_MINING, []))
-            
             return self.async_show_form(
                 step_id = "options",
                 data_schema = vol.Schema({
