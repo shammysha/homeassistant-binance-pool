@@ -267,7 +267,7 @@ class BinancePoolOptionsFlow(OptionsFlow):
         self._filter_statuses: Optional[Mapping[str, bool]] = None
         self._base_config: Mapping[str, Any] = CONFIG_ENTRY_SCHEMA({**config_entry.data, **config_entry.options})    
 
-        self.save_data: ConfigType = config_entry.data
+        self.save_data: ConfigType = {**self._config_entry.data}
         self.api_data = False
         self.coins = []
         self.assets = []
