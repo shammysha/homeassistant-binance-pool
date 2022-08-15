@@ -72,7 +72,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.6"
+__version__ = "1.6.7"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)

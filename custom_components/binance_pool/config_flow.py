@@ -109,8 +109,8 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
         if not user_input:
             return self.async_abort(reason="empty_config")
 
-        if self._check_entry_exists(user_input[CONF_NAME]):
-            return self.async_abort(reasion='already_exists')
+        await self.async_set_unique_id(user_input[CONF_NAME])
+        self._abort_if_unique_id_configured()
         
         return self._save_config({CONF_NAME: user_input[CONF_NAME]})
 
