@@ -73,7 +73,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "1.6.29"
+__version__ = "1.6.30"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -142,14 +142,6 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     binance_data_wallet = BinanceDataWallet(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN])
     binance_data_mining = BinanceDataMining(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN], config.get(CONF_MINING))
 
-    hass.data[DOMAIN].update({
-        'config': config,
-        'coordinator': { 
-            COORDINATOR_MINING: binance_data_mining,
-            COORDINATOR_WALLET: binance_data_wallet
-        }
-    })
-    
     upddata = [ binance_data_wallet.async_config_entry_first_refresh() ]
     if config[CONF_MINING]:
         upddata.append(
@@ -164,6 +156,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             await binance_data_mining.client.close_connection()
             raise r
     
+    sensors = []
+    
     if hasattr(binance_data_wallet, "balances"):
         for balance in binance_data_wallet.balances:
             if not config[CONF_BALANCES] or balance["coin"] in config[CONF_BALANCES]:
@@ -171,9 +165,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                 balance["native"] = config[CONF_NATIVE_CURRENCY]
                 balance.pop("networkList", None)
                 
-                hass.async_create_task(
-                    async_load_platform(hass, "sensor", DOMAIN, balance, config)
-                )
+                sensors.append(balance);
 
                 fundExists = False
                 
@@ -185,9 +177,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                         funding["native"] = config[CONF_NATIVE_CURRENCY]                
                         funding.pop("btcValuation", None)
                         
-                        hass.async_create_task(
-                            async_load_platform(hass, "sensor", DOMAIN, funding, config)
-                        )
+                        sensors.append(funding)
                         
                         break
 
@@ -202,9 +192,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                         "withdrawing": "0",
                     }
                     
-                    hass.async_create_task(                        
-                        async_load_platform(hass, "sensor", DOMAIN, funding, config)
-                    )
+                    sensors.append(funding)
                     
         saving = {
             'name': name,
@@ -215,9 +203,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             'flexible': binance_data_wallet.savings['totalFlexibleInUSDT'],
         }
             
-        hass.async_create_task(
-            async_load_platform(hass, "sensor", DOMAIN, saving, config)
-        )                    
+        sensors.append(saving)
 
         saving = {
             'name': name,
@@ -228,19 +214,14 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             'flexible': binance_data_wallet.savings['totalFlexibleInBTC'],
         }
          
-        hass.async_create_task(   
-            async_load_platform(hass, "sensor", DOMAIN, saving, config)
-        )
-                    
+        sensors.append(saving)         
 
     if hasattr(binance_data_wallet, "tickers"):
         for ticker in binance_data_wallet.tickers:
             if not config[CONF_EXCHANGES] or ticker["symbol"] in config[CONF_EXCHANGES]:
                 ticker["name"] = name
                 
-                hass.async_create_task(
-                    async_load_platform(hass, "sensor", DOMAIN, ticker, config)
-                )                
+                sensors.append(ticker)       
 
     if hasattr(binance_data_mining, "mining"):
         for account, algos in binance_data_mining.mining.items():
@@ -254,9 +235,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                             worker["algorithm"] = algo
                             worker["account"] = account
                             
-                            hass.async_create_task(
-                                async_load_platform(hass, "sensor", DOMAIN, worker, config)
-                            )                        
+                            sensors.append(worker)
                             
                             if worker["status"] == 0:
                                 unknown += 1
@@ -307,23 +286,36 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                             else:
                                 profit["profitYesterday"] = 0
                               
-                            hass.async_create_task(
-                                async_load_platform(hass, "sensor", DOMAIN, profit, config)
-                            )                            
+                            sensors.append(profit)
                         
                         status.pop("profitToday", None)
                         status.pop("profitYesterday", None)
     
-                        hass.async_create_task(
-                            async_load_platform(hass, "sensor", DOMAIN, status, config)
-                        )                  
-                                     
+                        sensors.append(status)
+                        
+    hass.data.setDefault(DOMAIN, {})[entry_id] = {
+        'config': config,
+        'coordinator': { 
+            COORDINATOR_MINING: binance_data_mining,
+            COORDINATOR_WALLET: binance_data_wallet
+        },
+        'sensors': sensors
+    }                        
+                        
+    if sensors:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
+        )
+
     return True
    
    
-# Example migration function
+async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
+    _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")
+    await hass.config_entries.async_reload(config_entry.entry_id)   
+   
+
 async def async_migrate_entry(hass, config_entry: ConfigEntry):
-    """Migrate old entry."""
     _LOGGER.debug("Migrating from version %s to %s", config_entry.version, FLOW_VERSION)
 
     if config_entry.version != FLOW_VERSION:
