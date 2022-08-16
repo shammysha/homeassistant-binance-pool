@@ -29,6 +29,8 @@ from .const import (
     DOMAIN,
     CURRENCY_ICONS,
     DEFAULT_COIN_ICON,
+    EXCHANGES_ICON,
+    STATUS_ICON,
 
     ATTRIBUTION,
     ATTR_FREE,
@@ -499,7 +501,7 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return CURRENCY_ICONS.get(self._symbol, "mdi:currency-" + self._symbol.lower())
+        return EXCHANGES_ICON
 
     @property
     def extra_state_attributes(self):
@@ -696,8 +698,8 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return 'mdi::finance'
-
+        return STATUS_ICON
+    
     @property
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""

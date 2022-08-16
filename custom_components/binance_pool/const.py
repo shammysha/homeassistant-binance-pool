@@ -32,6 +32,8 @@ CURRENCY_ICONS = {
     "RUB": "mdi:currency-rub"
 }
 
+EXCHANGES_ICON = 'mdi:chart-line'
+STATUS_ICON = 'mdi:information-outline'
 DEFAULT_COIN_ICON = "mdi:currency-usd-circle"
 
 ATTRIBUTION = "Data provided by Binance"
