@@ -18,44 +18,47 @@ Added pool monitoring functionality
 ---
 In order to use this integration, you need to first [Register an account with Binance](https://accounts.binance.com/en/register), and then [generate an API key](https://www.binance.com/en/my/settings/api-management) from the "API Management" settings section.
 
-To use this component in your installation, add the following to your `configuration.yaml` file:
+To use this component add new integration via HomeAssistant GUI or add the following to your `configuration.yaml` file: 
+
+Settings -> add the following to your `configuration.yaml` file:
 
 ```yaml
 binance_pool:
-  api_key: !secret binance_api_key
-  api_secret: !secret binance_api_secret
+  - name: Binance 
+  	api_key: !secret binance_api_key
+  	api_secret: !secret binance_api_secret
 ```
 
 #### Configuration variables:
-| Key               | Type   | Required | Description                               | Default |
-| :---------------- | :----: | :------: |:--------------------------------------    | :-----: |
-| `name`            | string | No       | Name for the created sensors              | Binance |
-| `domain`          | string | No       | Binance domain to query                   | us      |
-| `native_currency` | array  | No       | List of currencies for price calculations | USD     |
-| `api_key`         | string | Yes      | Binance API key                           | -       |
-| `api_secret`      | string | Yes      | Binance API secret                        | -       |
-| `balances`        | array  | No       | List of coins for wallet balances         | -       |
-| `exchanges`       | array  | No       | List of pairs for exchange rates          | -       |
-| `miners`          | array  | No       | List of pool accounts                     | -       |
+| Key               | Type   | Required | Description                               | Default          |
+| :---------------- | :----: | :------: |:--------------------------------------    | :-----:          |
+| `name`            | string | yes      | Name for the created sensors              | Binance          |
+| `domain`          | string | No       | Binance domain to query                   | us               |
+| `native_currency` | array  | No       | List of currencies for price calculations | USDT             |
+| `api_key`         | string | Yes      | Binance API key                           | -                |
+| `api_secret`      | string | Yes      | Binance API secret                        | -                |
+| `balances`        | array  | No       | List of coins for wallet balances         | BTC,ETH          |
+| `exchanges`       | array  | No       | List of pairs for exchange rates          | BTCUSDT,ETHUSDT  |
+| `miners`          | array  | No       | List of pool accounts                     | -                |
 
 #### Full example configuration
 ```yaml
 binance_pool:
-  name: My Binance
-  domain: us
-  api_key: !secret binance_api_key
-  api_secret: !secret binance_api_secret
-  native_currency: 
-    - USD
-  balances:
-    - USDT
-    - BTC
-    - ETH
-  exchanges:
-    - BTCUSDT
-    - ETHUSDT
-  miners:
-    - account
+  - name: My Binance
+    domain: us
+    api_key: !secret binance_api_key
+    api_secret: !secret binance_api_secret
+    native_currency: 
+      - USD
+    balances:
+      - USDT
+      - BTC
+      - ETH
+    exchanges:
+      - BTCUSDT
+      - ETHUSDT
+    miners:
+      - account
 ```
 
 This configuration will create the following entities in your Home Assistant instance:
@@ -80,7 +83,7 @@ This configuration will create the following entities in your Home Assistant ins
 ---
 
 #### `name`
-The `name` you specify will be used as a prefix for all the sensors this integration creates. By default, the prefix is simply "Binance".
+The `name` you specify will be used as a prefix for all the sensors this integration creates. By default, the prefix is simply "Binance". Must be unique for each intergation
 
 #### `domain`
 This integration is set up to query [Binance.us](https://www.binance.us/) by default. If you've registered your Binance account with a different domain, like [Binance.com](https://www.binance.com/), make sure to set this key in your configuration accordingly.
