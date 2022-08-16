@@ -20,8 +20,6 @@ In order to use this integration, you need to first [Register an account with Bi
 
 To use this component add new integration via HomeAssistant GUI or add the following to your `configuration.yaml` file: 
 
-Settings -> add the following to your `configuration.yaml` file:
-
 ```yaml
 binance_pool:
   - name: Binance 
