@@ -1,11 +1,25 @@
 """
 Binance sensor
 """
-from datetime import datetime
+from datetime import (
+    datetime
+)
 
-from homeassistant.const import ATTR_ATTRIBUTION
-from homeassistant.components.sensor import SensorEntity
-from homeassistant.helpers.update_coordinator import (CoordinatorEntity, DataUpdateCoordinator, UpdateFailed)
+from homeassistant.const import (
+    ATTR_ATTRIBUTION
+)
+
+from homeassistant.core import ( 
+    callback
+)
+
+from homeassistant.components.sensor import (
+    SensorEntity
+)
+
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity
+)
 
 from .const import (
     DOMAIN,
@@ -47,6 +61,107 @@ from .const import (
     COORDINATOR_MINING,
     COORDINATOR_WALLET
 )
+
+
+async def async_setup_entry(hass, config_entry, async_add_entities):
+    entry_id = config_entry.entry_id
+    sensors = hass.data[DOMAIN][entry_id]['sensors']
+    coordinators = hass.data[DOMAIN][entry_id]['coordinator']
+    
+    for sensor_data in sensors:
+        if sensor_data is None:
+            continue
+        
+        elif all(i in sensor_data for i in ["name", "coin", "free", "locked", "freeze", "native"]):
+            coordinator = coordinators[COORDINATOR_WALLET]        
+            name = sensor_data["name"]
+            coin = sensor_data["coin"]
+            free = sensor_data["free"]
+            locked = sensor_data["locked"]
+            freeze = sensor_data["freeze"]
+            native = sensor_data["native"]
+    
+            sensor = BinanceSensor(coordinator, name, coin, free, locked, freeze, native)
+            
+        elif all(i in sensor_data for i in ["name", "asset", "free", "locked", "freeze", "withdrawing", "native"]):
+            coordinator = coordinators[COORDINATOR_WALLET]        
+            name = sensor_data["name"]
+            coin = sensor_data["asset"]
+            free = sensor_data["free"]
+            locked = sensor_data["locked"]
+            freeze = sensor_data["freeze"]
+            native = sensor_data["native"]
+            withdrawing = sensor_data["withdrawing"]
+    
+            sensor = BinanceFundingSensor(coordinator, name, coin, free, locked, freeze, withdrawing, native)
+            
+        elif all(i in sensor_data for i in ["name", "coin", "total", "fixed", "flexible", "native"]):
+            coordinator = coordinators[COORDINATOR_WALLET]        
+            name = sensor_data["name"]
+            coin = sensor_data["coin"]
+            total = sensor_data["total"]
+            fixed = sensor_data["fixed"]
+            flexible = sensor_data["flexible"]
+            native = sensor_data["native"]
+    
+            sensor = BinanceSavingsSensor(coordinator, name, coin, total, fixed, flexible, native)        
+            
+        elif all(i in sensor_data for i in ["name", "symbol", "price"]):
+            coordinator = coordinators[COORDINATOR_WALLET]        
+            name = sensor_data["name"]
+            symbol = sensor_data["symbol"]
+            price = sensor_data["price"]
+    
+            sensor = BinanceExchangeSensor(coordinator, name, symbol, price)
+    
+    
+        elif all(i in sensor_data for i in ["name", "account", "algorithm", "workerName", "status", "hashRate", "dayHashRate", "rejectRate", "lastShareTime"]):
+            coordinator = coordinators[COORDINATOR_MINING]        
+            name = sensor_data["name"]
+            account = sensor_data["account"]
+            algorithm = sensor_data["algorithm"]
+            worker = sensor_data["workerName"]
+            status = sensor_data["status"]
+            hrate = sensor_data["hashRate"]
+            hrate_daily = sensor_data["dayHashRate"]
+            reject = sensor_data["rejectRate"]
+            update = sensor_data["lastShareTime"]
+    
+            sensor = BinanceWorkerSensor(coordinator, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
+    
+        elif all(i in sensor_data for i in ["name", "account", "algorithm", "fifteenMinHashRate", "dayHashRate", "validNum", "invalidNum", "unknown", "invalid", "inactive"]):
+            coordinator = coordinators[COORDINATOR_MINING]
+            name = sensor_data["name"]
+            account = sensor_data["account"]
+            algorithm = sensor_data["algorithm"]
+            hrate_15min = sensor_data["fifteenMinHashRate"]
+            hrate_day = sensor_data["dayHashRate"]
+            validNum = sensor_data["validNum"]
+            invalidNum = sensor_data["invalidNum"]
+            unknown = sensor_data["unknown"]
+            invalid = sensor_data["invalid"]
+            inactive = sensor_data["inactive"]
+    
+            sensor = BinanceStatusSensor(coordinator, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive)
+            
+        elif all(i in sensor_data for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday", "native"]):
+            coordinator = coordinators[COORDINATOR_MINING]
+            wallet = coordinators[COORDINATOR_WALLET]
+            name = sensor_data["name"]
+            account = sensor_data["account"]
+            algorithm = sensor_data["algorithm"]
+            coin = sensor_data["coin"]
+            estimate = sensor_data["profitToday"]
+            earnings = sensor_data["profitYesterday"]
+            native = sensor_data["native"]
+            
+            
+            sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
+    
+        async_add_entities([sensor], True)
+
+
+    
 async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
     """Setup the Binance sensors."""
 
@@ -199,6 +314,7 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
          
         return data
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         for balance in self.coordinator.balances:
             if balance["coin"] == self._coin:
@@ -292,6 +408,7 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
          
         return data
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -398,6 +515,7 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
          
         return data
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -467,6 +585,7 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
             ATTR_ATTRIBUTION: ATTRIBUTION,
         }
 
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -564,7 +683,7 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
         
         return data
         
-        
+    @callback        
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
 
@@ -664,7 +783,7 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
             ATTR_ALGO: f"{self._algorithm}",
         }
         
-        
+    @callback        
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         exists = False
@@ -776,6 +895,7 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
         
         return data
         
+    @callback        
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
 

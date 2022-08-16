@@ -1,15 +1,57 @@
-from datetime import timedelta
+from datetime import (
+    timedelta
+)
+
 import logging
-import asyncio
 import copy
 
-from homeassistant.const import CONF_API_KEY, CONF_NAME
-from homeassistant.helpers.discovery import async_load_platform
-from homeassistant.util import Throttle
-from homeassistant.helpers.update_coordinator import CoordinatorEntity, DataUpdateCoordinator, UpdateFailed
-from homeassistant.exceptions import ConfigEntryAuthFailed
+from typing import (
+    Dict, 
+    Final, 
+    Mapping, 
+    Optional, 
+    TYPE_CHECKING, 
+    Tuple, 
+    Type
+)
 
-from .schemas import CONFIG_SCHEMA
+from asyncio import (
+    gather
+)
+
+from homeassistant.config_entries import (
+    ConfigEntry, 
+    SOURCE_IMPORT
+)
+
+from homeassistant.const import (
+    CONF_API_KEY, 
+    CONF_NAME
+)
+
+from homeassistant.exceptions import (
+    ConfigEntryAuthFailed
+)
+
+from homeassistant.helpers.discovery import (
+    async_load_platform
+)
+
+from homeassistant.helpers.update_coordinator import (
+    CoordinatorEntity, 
+    DataUpdateCoordinator, 
+    UpdateFailed
+)
+
+from homeassistant.util import (
+    Throttle
+)
+
+from .schemas import (
+    CONFIG_SCHEMA, 
+    CONFIG_ENTRY_SCHEMA
+)
+
 from .const import (
     DOMAIN,
     CONF_API_SECRET,
@@ -21,63 +63,109 @@ from .const import (
     MIN_TIME_BETWEEN_UPDATES,
     MIN_TIME_BETWEEN_MINING_UPDATES,
     COORDINATOR_MINING,
-    COORDINATOR_WALLET    
+    COORDINATOR_WALLET,
+    FLOW_VERSION    
 )
 
-from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
+from .client import (
+    BinancePoolClient, 
+    BinanceAPIException, 
+    BinanceRequestException
+)
 
-__version__ = "1.5.12"
+__version__ = "2.0"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
 
 async def async_setup(hass, config):
-    api_key = config[DOMAIN][CONF_API_KEY]
-    api_secret = config[DOMAIN][CONF_API_SECRET]
-    name = config[DOMAIN].get(CONF_NAME)
-    balances = config[DOMAIN].get(CONF_BALANCES)
-    tickers = config[DOMAIN].get(CONF_EXCHANGES)
-    miners = config[DOMAIN].get(CONF_MINING)
-    native_currency = config[DOMAIN].get(CONF_NATIVE_CURRENCY)
-    tld = config[DOMAIN].get(CONF_DOMAIN)
-
-    binance_data_wallet = BinanceDataWallet(hass, api_key, api_secret, tld)
-    binance_data_mining = BinanceDataMining(hass, api_key, api_secret, tld, miners)
-
-    hass.data[DOMAIN] = { 
-        'config': config,
-        'coordinator': {
-            COORDINATOR_MINING: binance_data_mining,
-            COORDINATOR_WALLET: binance_data_wallet
-        } 
-    }
+    domain_config = config.get(DOMAIN)
     
+    if not domain_config:
+        return True
+    
+    yaml_config = {}
+    hass.data[DOMAIN] = { 'yaml': yaml_config }
+    
+    for item in domain_config:
+        name = item[CONF_NAME]
+        
+        _LOGGER.debug('Entry with name "%s" from YAML', name)
+        
+        existing_entry = find_existing_entry(hass, name)
+        if existing_entry:
+            if existing_entry.source == SOURCE_IMPORT:
+                yaml_config[name] = item
+                _LOGGER.debug('Skipping existing import binding for "%s"', name)
+            else: 
+                _LOGGER.warning("YAML config for %s is overridden by another config entry!", name)                
+            
+            continue
+                
+        yaml_config[name] = item        
+        hass.async_create_task(
+            hass.config_entries.flow.async_init(
+                DOMAIN, context={"source": SOURCE_IMPORT}, data=item
+            )
+        )        
+    
+    if yaml_config:
+        _LOGGER.debug("YAML names: %s", '"' + '", "'.join(yaml_config.keys()) + '"')
+    else:
+        _LOGGER.debug("No configuration added from YAML")
+
+    return True
+    
+async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
+    entry_id = config_entry.entry_id
+    name = config_entry.data[CONF_NAME]
+
+    config = {}
+    
+    if config_entry.source == SOURCE_IMPORT:
+        yaml_config = hass.data[DOMAIN].get('yaml')
+
+        if not (yaml_config and name in yaml_config):
+            _LOGGER.info(f"[{name}] Removing entry {entry_id} " f"after removal from YAML configuration")
+            
+            hass.async_create_task(hass.config_entries.async_remove(entry_id))
+            return False
+        
+        config = yaml_config[name]
+
+    else:
+        config = CONFIG_ENTRY_SCHEMA({**config_entry.data, **config_entry.options})        
+
+        
+    _LOGGER.debug(f"[{name}] Setting up config entry")
+
+    binance_data_wallet = BinanceDataWallet(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN])
+    binance_data_mining = BinanceDataMining(hass, config[CONF_API_KEY], config[CONF_API_SECRET], config[CONF_DOMAIN], config.get(CONF_MINING))
+
     upddata = [ binance_data_wallet.async_config_entry_first_refresh() ]
-    if miners:
+    if config[CONF_MINING]:
         upddata.append(
             binance_data_mining.async_config_entry_first_refresh()
         )
     
-    res = await asyncio.gather(*upddata, return_exceptions=True)
+    res = await gather(*upddata, return_exceptions=True)
     
     for r in res:
         if isinstance(r, Exception): 
             await binance_data_wallet.client.close_connection()
             await binance_data_mining.client.close_connection()
             raise r
-
-
+    
+    sensors = []
     
     if hasattr(binance_data_wallet, "balances"):
         for balance in binance_data_wallet.balances:
-            if not balances or balance["coin"] in balances:
+            if not config[CONF_BALANCES] or balance["coin"] in config[CONF_BALANCES]:
                 balance["name"] = name
-                balance["native"] = native_currency
+                balance["native"] = config[CONF_NATIVE_CURRENCY]
                 balance.pop("networkList", None)
                 
-                hass.async_create_task(
-                    async_load_platform(hass, "sensor", DOMAIN, balance, config)
-                )
+                sensors.append(balance);
 
                 fundExists = False
                 
@@ -86,19 +174,17 @@ async def async_setup(hass, config):
                         fundExists = True
                         
                         funding["name"] = name
-                        funding["native"] = native_currency                
+                        funding["native"] = config[CONF_NATIVE_CURRENCY]                
                         funding.pop("btcValuation", None)
                         
-                        hass.async_create_task(
-                            async_load_platform(hass, "sensor", DOMAIN, funding, config)
-                        )
+                        sensors.append(funding)
                         
                         break
 
                 if not fundExists:
                     funding = {
                         "name": name,
-                        "native": native_currency,
+                        "native": config[CONF_NATIVE_CURRENCY],
                         "asset": balance["coin"],
                         "free": "0",
                         "locked": "0",
@@ -106,123 +192,146 @@ async def async_setup(hass, config):
                         "withdrawing": "0",
                     }
                     
-                    hass.async_create_task(                        
-                        async_load_platform(hass, "sensor", DOMAIN, funding, config)
-                    )
+                    sensors.append(funding)
                     
         saving = {
             'name': name,
-            'native': native_currency,
+            'native': config[CONF_NATIVE_CURRENCY],
             'coin': 'USDT',
             'total': binance_data_wallet.savings['totalAmountInUSDT'],
             'fixed': binance_data_wallet.savings['totalFixedAmountInUSDT'],
             'flexible': binance_data_wallet.savings['totalFlexibleInUSDT'],
         }
             
-        hass.async_create_task(
-            async_load_platform(hass, "sensor", DOMAIN, saving, config)
-        )                    
+        sensors.append(saving)
 
         saving = {
             'name': name,
-            'native': native_currency,
+            'native': config[CONF_NATIVE_CURRENCY],
             'coin': 'BTC',
             'total': binance_data_wallet.savings['totalAmountInBTC'],
             'fixed': binance_data_wallet.savings['totalFixedAmountInBTC'],
             'flexible': binance_data_wallet.savings['totalFlexibleInBTC'],
         }
          
-        hass.async_create_task(   
-            async_load_platform(hass, "sensor", DOMAIN, saving, config)
-        )
-                    
+        sensors.append(saving)         
 
     if hasattr(binance_data_wallet, "tickers"):
         for ticker in binance_data_wallet.tickers:
-            if not tickers or ticker["symbol"] in tickers:
+            if not config[CONF_EXCHANGES] or ticker["symbol"] in config[CONF_EXCHANGES]:
                 ticker["name"] = name
                 
-                hass.async_create_task(
-                    async_load_platform(hass, "sensor", DOMAIN, ticker, config)
-                )                
+                sensors.append(ticker)       
 
     if hasattr(binance_data_mining, "mining"):
         for account, algos in binance_data_mining.mining.items():
-            for algo, type in algos.items():
-                unknown = invalid = inactive = 0
-                
-                if "workers" in type:
-                    for worker in type["workers"]:
-                        worker["name"] = name
-                        worker["algorithm"] = algo
-                        worker["account"] = account
-                        
-                        hass.async_create_task(
-                            async_load_platform(hass, "sensor", DOMAIN, worker, config)
-                        )                        
-                        
-                        if worker["status"] == 0:
-                            unknown += 1
-                        elif worker["status"] == 2:
-                            invalid += 1
-                        elif worker["status"] == 3:
-                            inactive += 1    
-                        
-                if "status" in type:
-                    status = copy.deepcopy(type["status"])
-                    status["name"] = name
-                    status["algorithm"] = algo
-                    status["account"] = account
-                    status["unknown"] = unknown
-                    status["invalid"] = invalid
-                    status["inactive"] = inactive
+            if not config[CONF_MINING] or account in config[CONF_MINING]:
+                for algo, type in algos.items():
+                    unknown = invalid = inactive = 0
                     
-                    if "fifteenMinHashRate" not in status:
-                        status["fifteenMinHashRate"] = 0
+                    if "workers" in type:
+                        for worker in type["workers"]:
+                            worker["name"] = name
+                            worker["algorithm"] = algo
+                            worker["account"] = account
+                            
+                            sensors.append(worker)
+                            
+                            if worker["status"] == 0:
+                                unknown += 1
+                            elif worker["status"] == 2:
+                                invalid += 1
+                            elif worker["status"] == 3:
+                                inactive += 1    
+                            
+                    if "status" in type:
+                        status = copy.deepcopy(type["status"])
+                        status["name"] = name
+                        status["algorithm"] = algo
+                        status["account"] = account
+                        status["unknown"] = unknown
+                        status["invalid"] = invalid
+                        status["inactive"] = inactive
                         
-                    if "dayHashRate" not in status:
-                        status["dayHashRate"] = 0                    
-
-                    for coindata in binance_data_mining.coins:
-                        if coindata["algoName"].lower() != algo:
-                            continue
-
-                        coin = coindata["coinName"]
-                        
-                        estimate = status.get("profitToday", {})
-                        earnings = status.get("profitYesterday", {})
-                        
-                        profit = {
-                            "name": name, 
-                            "algorithm": algo,
-                            "account": account,
-                            "coin": coin,
-                            "native": native_currency,
-                        }
-                        
-                        if coin in estimate:
-                            profit["profitToday"] = estimate[coin]
-                        else:
-                            profit["profitToday"] = 0
-                        
-                        if coin in earnings:
-                            profit["profitYesterday"] = earnings[coin]
-                        else:
-                            profit["profitYesterday"] = 0
-                          
-                        hass.async_create_task(
-                            async_load_platform(hass, "sensor", DOMAIN, profit, config)
-                        )                            
-                    
-                    status.pop("profitToday", None)
-                    status.pop("profitYesterday", None)
-
-                    hass.async_create_task(
-                        async_load_platform(hass, "sensor", DOMAIN, status, config)
-                    )                  
-                                     
-    return True
+                        if "fifteenMinHashRate" not in status:
+                            status["fifteenMinHashRate"] = 0
+                            
+                        if "dayHashRate" not in status:
+                            status["dayHashRate"] = 0                    
     
+                        for coindata in binance_data_mining.coins:
+                            if coindata["algoName"].lower() != algo:
+                                continue
+    
+                            coin = coindata["coinName"]
+                            
+                            estimate = status.get("profitToday", {})
+                            earnings = status.get("profitYesterday", {})
+                            
+                            profit = {
+                                "name": name, 
+                                "algorithm": algo,
+                                "account": account,
+                                "coin": coin,
+                                "native": config[CONF_NATIVE_CURRENCY]
+                            }
+                            
+                            if coin in estimate:
+                                profit["profitToday"] = estimate[coin]
+                            else:
+                                profit["profitToday"] = 0
+                            
+                            if coin in earnings:
+                                profit["profitYesterday"] = earnings[coin]
+                            else:
+                                profit["profitYesterday"] = 0
+                              
+                            sensors.append(profit)
+                        
+                        status.pop("profitToday", None)
+                        status.pop("profitYesterday", None)
+    
+                        sensors.append(status)
+                        
+    hass.data.setdefault(DOMAIN, {})[entry_id] = {
+        'config': config,
+        'coordinator': { 
+            COORDINATOR_MINING: binance_data_mining,
+            COORDINATOR_WALLET: binance_data_wallet
+        },
+        'sensors': sensors
+    }                        
+                        
+    if sensors:
+        hass.async_create_task(
+            hass.config_entries.async_forward_entry_setup(config_entry, "sensor")
+        )
+
+    return True
+   
+   
+async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
+    _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")
+    await hass.config_entries.async_reload(config_entry.entry_id)   
+   
+
+async def async_migrate_entry(hass, config_entry: ConfigEntry):
+    _LOGGER.debug("Migrating from version %s to %s", config_entry.version, FLOW_VERSION)
+
+    if config_entry.version != FLOW_VERSION:
+        config_entry.version = FLOW_VERSION
+        hass.config_entries.async_update_entry(config_entry, data={**config_entry.data})
+
+    _LOGGER.info("Migration to version %s successful", config_entry.version)
+
+    return True   
+   
+def find_existing_entry(hass, name) -> Optional[ConfigEntry]:
+    for config_entry in hass.config_entries.async_entries(DOMAIN):
+        if config_entry.unique_id == name:
+            return config_entry   
+  
+      
 class BinanceDataMining(DataUpdateCoordinator):
     def __init__(self, hass, api_key, api_secret, tld, miners = []):
         """Initialize."""
@@ -247,7 +356,7 @@ class BinanceDataMining(DataUpdateCoordinator):
                     self.client.async_get_mining_algolist()
                 ] 
                 
-                res = await asyncio.gather(*common_queries, return_exceptions=True)
+                res = await gather(*common_queries, return_exceptions=True)
                 for r in res:
                     if isinstance(r, Exception): 
                         await self.client.close_connection()
@@ -309,7 +418,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
                 self.client.get_all_tickers()
             ]
             
-            res = await asyncio.gather(*tasks, return_exceptions=True)
+            res = await gather(*tasks, return_exceptions=True)
             for r in res:
                 if isinstance(r, Exception):
                     await self.client.close_connection()
