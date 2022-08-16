@@ -17,6 +17,10 @@ from homeassistant.components.sensor import (
     SensorEntity
 )
 
+from homeassistant.util import (
+    slugify
+)
+
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity
 )
@@ -25,6 +29,8 @@ from .const import (
     DOMAIN,
     CURRENCY_ICONS,
     DEFAULT_COIN_ICON,
+    EXCHANGES_ICON,
+    STATUS_ICON,
 
     ATTRIBUTION,
     ATTR_FREE,
@@ -69,6 +75,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     coordinators = hass.data[DOMAIN][entry_id]['coordinator']
     
     for sensor_data in sensors:
+        sensor = False
+        
         if sensor_data is None:
             continue
         
@@ -158,103 +166,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             
             sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
     
-        async_add_entities([sensor], True)
-
-
-    
-async def async_setup_platform(hass, config, async_add_entities, discovery_info=None):
-    """Setup the Binance sensors."""
-
-    if discovery_info is None:
-        return
-    
-    elif all(i in discovery_info for i in ["name", "coin", "free", "locked", "freeze", "native"]):
-        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
-        name = discovery_info["name"]
-        coin = discovery_info["coin"]
-        free = discovery_info["free"]
-        locked = discovery_info["locked"]
-        freeze = discovery_info["freeze"]
-        native = discovery_info["native"]
-
-        sensor = BinanceSensor(coordinator, name, coin, free, locked, freeze, native)
-        
-    elif all(i in discovery_info for i in ["name", "asset", "free", "locked", "freeze", "withdrawing", "native"]):
-        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
-        name = discovery_info["name"]
-        coin = discovery_info["asset"]
-        free = discovery_info["free"]
-        locked = discovery_info["locked"]
-        freeze = discovery_info["freeze"]
-        native = discovery_info["native"]
-        withdrawing = discovery_info["withdrawing"]
-
-        sensor = BinanceFundingSensor(coordinator, name, coin, free, locked, freeze, withdrawing, native)
-        
-    elif all(i in discovery_info for i in ["name", "coin", "total", "fixed", "flexible", "native"]):
-        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
-        name = discovery_info["name"]
-        coin = discovery_info["coin"]
-        total = discovery_info["total"]
-        fixed = discovery_info["fixed"]
-        flexible = discovery_info["flexible"]
-        native = discovery_info["native"]
-
-        sensor = BinanceSavingsSensor(coordinator, name, coin, total, fixed, flexible, native)        
-        
-    elif all(i in discovery_info for i in ["name", "symbol", "price"]):
-        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]        
-        name = discovery_info["name"]
-        symbol = discovery_info["symbol"]
-        price = discovery_info["price"]
-
-        sensor = BinanceExchangeSensor(coordinator, name, symbol, price)
-
-
-    elif all(i in discovery_info for i in ["name", "account", "algorithm", "workerName", "status", "hashRate", "dayHashRate", "rejectRate", "lastShareTime"]):
-        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING]        
-        name = discovery_info["name"]
-        account = discovery_info["account"]
-        algorithm = discovery_info["algorithm"]
-        worker = discovery_info["workerName"]
-        status = discovery_info["status"]
-        hrate = discovery_info["hashRate"]
-        hrate_daily = discovery_info["dayHashRate"]
-        reject = discovery_info["rejectRate"]
-        update = discovery_info["lastShareTime"]
-
-        sensor = BinanceWorkerSensor(coordinator, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update)
-
-    elif all(i in discovery_info for i in ["name", "account", "algorithm", "fifteenMinHashRate", "dayHashRate", "validNum", "invalidNum", "unknown", "invalid", "inactive"]):
-        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING]
-        name = discovery_info["name"]
-        account = discovery_info["account"]
-        algorithm = discovery_info["algorithm"]
-        hrate_15min = discovery_info["fifteenMinHashRate"]
-        hrate_day = discovery_info["dayHashRate"]
-        validNum = discovery_info["validNum"]
-        invalidNum = discovery_info["invalidNum"]
-        unknown = discovery_info["unknown"]
-        invalid = discovery_info["invalid"]
-        inactive = discovery_info["inactive"]
-
-        sensor = BinanceStatusSensor(coordinator, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive)
-        
-    elif all(i in discovery_info for i in ["name", "account", "algorithm", "coin", "profitToday", "profitYesterday", "native"]):
-        coordinator = hass.data[DOMAIN]['coordinator'][COORDINATOR_MINING]
-        wallet = hass.data[DOMAIN]['coordinator'][COORDINATOR_WALLET]
-        name = discovery_info["name"]
-        account = discovery_info["account"]
-        algorithm = discovery_info["algorithm"]
-        coin = discovery_info["coin"]
-        estimate = discovery_info["profitToday"]
-        earnings = discovery_info["profitYesterday"]
-        native = discovery_info["native"]
-        
-        
-        sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
-
-    async_add_entities([sensor], True)
+        if sensor:
+            async_add_entities([sensor], True)
 
 class BinanceSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
@@ -273,6 +186,10 @@ async def async_setup_platform(hass, config, async_add_entities, discovery_info=
         self._total = float(free) + float(locked) + float(freeze)
         self._state = None
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {} }
+
+    @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')
 
     @property
     def name(self):
@@ -367,6 +284,10 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
         self._state = None
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {}, "withdrawing": {} }
 
+    @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')
+    
     @property
     def name(self):
         """Return the name of the sensor."""
@@ -477,6 +398,10 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
         self._native_balance = { "total" : {}, "fixed": {}, "flexible": {} }
 
     @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')
+
+    @property
     def name(self):
         """Return the name of the sensor."""
         return self._name
@@ -558,6 +483,10 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
         self._state = None
 
     @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')
+
+    @property
     def name(self):
         """Return the name of the sensor."""
         return self._name
@@ -575,7 +504,7 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return CURRENCY_ICONS.get(self._symbol, "mdi:currency-" + self._symbol.lower())
+        return EXCHANGES_ICON
 
     @property
     def extra_state_attributes(self):
@@ -635,6 +564,10 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
         
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
         self._status_icons = ["mdi:sync-off", "mdi:server-network", "mdi:server-network-off", "mdi:power-plug-off"]
+
+    @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')
 
     @property
     def name(self):
@@ -746,6 +679,10 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
 
     @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')
+
+    @property
     def name(self):
         """Return the name of the sensor."""
         return self._name
@@ -764,8 +701,8 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
     @property
     def icon(self):
         """Icon to use in the frontend, if any."""
-        return 'mdi::finance'
-
+        return STATUS_ICON
+    
     @property
     def extra_state_attributes(self):
         """Return the state attributes of the sensor."""
@@ -850,6 +787,10 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
         self._native_earnings = {}
         self._native_estimate = {}
         self._wallet = wallet
+        
+    @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')        
         
     @property
     def name(self):

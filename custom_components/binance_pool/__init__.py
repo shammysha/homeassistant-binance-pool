@@ -73,7 +73,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "2.0"
+__version__ = "2.0.7"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -194,27 +194,15 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                     
                     sensors.append(funding)
                     
-        saving = {
-            'name': name,
-            'native': config[CONF_NATIVE_CURRENCY],
-            'coin': 'USDT',
-            'total': binance_data_wallet.savings['totalAmountInUSDT'],
-            'fixed': binance_data_wallet.savings['totalFixedAmountInUSDT'],
-            'flexible': binance_data_wallet.savings['totalFlexibleInUSDT'],
-        }
-            
-        sensors.append(saving)
-
-        saving = {
-            'name': name,
-            'native': config[CONF_NATIVE_CURRENCY],
-            'coin': 'BTC',
-            'total': binance_data_wallet.savings['totalAmountInBTC'],
-            'fixed': binance_data_wallet.savings['totalFixedAmountInBTC'],
-            'flexible': binance_data_wallet.savings['totalFlexibleInBTC'],
-        }
-         
-        sensors.append(saving)         
+        for coin in [ 'BTC', 'USDT']:
+            sensors.append({
+                'name': name,
+                'native': config[CONF_NATIVE_CURRENCY],
+                'coin': coin,
+                'total': binance_data_wallet.savings[f'totalAmountIn{coin}'],
+                'fixed': binance_data_wallet.savings[f'totalFixedAmountIn{coin}'],
+                'flexible': binance_data_wallet.savings[f'totalFlexibleIn{coin}']
+            })
 
     if hasattr(binance_data_wallet, "tickers"):
         for ticker in binance_data_wallet.tickers:
