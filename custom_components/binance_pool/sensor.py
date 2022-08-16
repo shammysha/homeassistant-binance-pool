@@ -184,7 +184,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
     @property
     def unique_id(self):
-        return slugify(self._name, '-')
+        return slugify(text = self._name, separator = '-')
 
     @property
     def name(self):
@@ -281,7 +281,7 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        return slugify(self._name, '-')
+        return slugify(text = self._name, separator = '-')
     
     @property
     def name(self):
@@ -394,7 +394,7 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        return slugify(self._name, '-')
+        return slugify(text = self._name, separator = '-')
 
     @property
     def name(self):
@@ -479,7 +479,7 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        return slugify(self._name, '-')
+        return slugify(text = self._name, separator = '-')
 
     @property
     def name(self):
@@ -562,7 +562,7 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        return slugify(self._name, '-')
+        return slugify(text = self._name, separator = '-')
 
     @property
     def name(self):
@@ -675,7 +675,7 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def unique_id(self):
-        return slugify(self._name, '-')
+        return slugify(text = self._name, separator = '-')
 
     @property
     def name(self):
@@ -785,7 +785,7 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
         
     @property
     def unique_id(self):
-        return slugify(self._name, '-')        
+        return slugify(text = self._name, separator = '-')        
         
     @property
     def name(self):
