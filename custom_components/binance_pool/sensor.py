@@ -74,9 +74,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     sensors = hass.data[DOMAIN][entry_id]['sensors']
     coordinators = hass.data[DOMAIN][entry_id]['coordinator']
     
-    sensor = False
-    
     for sensor_data in sensors:
+        sensor = False
+        
         if sensor_data is None:
             continue
         
@@ -184,7 +184,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         self._native = native
         self._unit_of_measurement = coin
         self._total = float(free) + float(locked) + float(freeze)
-        self._state = self._total
+        self._state = None
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {} }
 
     @property
@@ -281,7 +281,7 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
         self._native = native
         self._unit_of_measurement = coin
         self._total = float(free) + float(locked) + float(freeze)
-        self._state = self._total
+        self._state = None
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {}, "withdrawing": {} }
 
     @property
@@ -394,7 +394,7 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
         self._flexible = flexible
         self._native = native
         self._unit_of_measurement = coin
-        self._state = self._total
+        self._state = None
         self._native_balance = { "total" : {}, "fixed": {}, "flexible": {} }
 
     @property
@@ -480,7 +480,7 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
         self._symbol = symbol
         self._price = price
         self._unit_of_measurement = None
-        self._state = float(self._price)
+        self._state = None
 
     @property
     def unique_id(self):
@@ -560,7 +560,7 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
         self._reject = reject
         self._update = update
         self._unit_of_measurement = "H/s"        
-        self._state = self._hrate
+        self._state = None
         
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
         self._status_icons = ["mdi:sync-off", "mdi:server-network", "mdi:server-network-off", "mdi:power-plug-off"]
@@ -674,7 +674,7 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
         self._invalid_workers = invalid
         self._inactive_workers = inactive
         self._unit_of_measurement = "H/s"        
-        self._state = self._hrate15m
+        self._state = None
 
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
 
