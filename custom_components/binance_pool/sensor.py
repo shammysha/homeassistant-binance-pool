@@ -67,7 +67,6 @@ from .const import (
     COORDINATOR_MINING,
     COORDINATOR_WALLET
 )
-from Lib.pickle import FALSE
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
