@@ -67,12 +67,15 @@ from .const import (
     COORDINATOR_MINING,
     COORDINATOR_WALLET
 )
+from Lib.pickle import FALSE
 
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     entry_id = config_entry.entry_id
     sensors = hass.data[DOMAIN][entry_id]['sensors']
     coordinators = hass.data[DOMAIN][entry_id]['coordinator']
+    
+    sensor = False
     
     for sensor_data in sensors:
         if sensor_data is None:
@@ -164,7 +167,8 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             
             sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
     
-        async_add_entities([sensor])
+        if sensor:
+            async_add_entities([sensor], True)
 
 class BinanceSensor(CoordinatorEntity, SensorEntity):
     """Representation of a Sensor."""
@@ -671,7 +675,7 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
         self._invalid_workers = invalid
         self._inactive_workers = inactive
         self._unit_of_measurement = "H/s"        
-        self._state = self._hrate15
+        self._state = self._hrate15m
 
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
 
