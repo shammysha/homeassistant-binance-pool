@@ -275,10 +275,11 @@ cards:
       curve: smooth
       type: line
       stroke_width: 1
-      fill_raw: zero
+      fill_raw: last
       group_by:
         func: avg
         duration: 15min
+        fill: last        
       show:
         in_header: false
         extremas: false
@@ -319,6 +320,8 @@ cards:
         show:
           in_header: true
           in_chart: false
+        group_by:
+          func: raw          
       - entity: sensor.my_binance_account_sha256_status
         name: Average (24h)
         attribute: average hashrate (24 hours)
@@ -327,7 +330,13 @@ cards:
         show:
           in_header: true
           in_chart: false
-
+        group_by:
+          func: raw          
+    apex_config:
+      toolbar:
+        followCursor: false
+      legend:
+        horizontalAlign: left
 ```
 
 ## Donate
