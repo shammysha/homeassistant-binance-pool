@@ -403,7 +403,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
         _LOGGER.debug(f"Fetching wallet data from binance.{self.tld}")
         try:
 
-            if not self.client.session:
+            if not self.client.session or self.client.session.closed:
                 self.client._init_session()
 
             tasks = [
