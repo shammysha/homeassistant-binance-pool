@@ -30,7 +30,7 @@ class BinancePoolClient(AsyncClient):
     def _init_session(self) -> ClientSession:
         return ClientSession(
             loop=self.loop,
-            connector = TCPConnector(loop=self.loop),
+            connector_owner = False,
             headers=self._get_headers()
         )
     
