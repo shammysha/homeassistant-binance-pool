@@ -343,7 +343,6 @@ class BinanceDataMining(DataUpdateCoordinator):
                 if not self.client.session or self.client.session.closed:
                     _LOGGER.debug("Recreate API session")
                     self.client._init_session()
-                    self.client.session._connector._closed = False
                     
                 common_queries = [
                     self.client.async_get_mining_coinlist(),
@@ -408,7 +407,6 @@ class BinanceDataWallet(DataUpdateCoordinator):
             if not self.client.session or self.client.session.closed:
                 _LOGGER.debug("Recreate API session")
                 self.client._init_session()
-                self.client.session._connector._closed = False
 
             tasks = [
                 self.client.async_get_capital_balances(),
