@@ -73,7 +73,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "2.0.10"
+__version__ = "2.0.11"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -340,7 +340,7 @@ class BinanceDataMining(DataUpdateCoordinator):
         try:        
             if self.mining:
                 
-                if not self.client.session:
+                if not self.client.session or self.client.session.closed:
                     self.client._init_session()
                     
                 common_queries = [
