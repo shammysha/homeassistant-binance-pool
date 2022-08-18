@@ -73,7 +73,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "2.0.16"
+__version__ = "2.0.17"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
@@ -342,7 +342,7 @@ class BinanceDataMining(DataUpdateCoordinator):
                 
                 if not self.client.session or self.client.session.closed:
                     _LOGGER.debug("Recreate API session")
-                    self.client._init_session()
+                    self.client.session = self.client._init_session()
                     
                 common_queries = [
                     self.client.async_get_mining_coinlist(),
@@ -406,7 +406,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
 
             if not self.client.session or self.client.session.closed:
                 _LOGGER.debug("Recreate API session")
-                self.client._init_session()
+                self.client.session = self.client._init_session()
 
             tasks = [
                 self.client.async_get_capital_balances(),
