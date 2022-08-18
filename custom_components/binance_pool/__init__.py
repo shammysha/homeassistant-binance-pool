@@ -33,18 +33,10 @@ from homeassistant.exceptions import (
     ConfigEntryAuthFailed
 )
 
-from homeassistant.helpers.discovery import (
-    async_load_platform
-)
-
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity, 
     DataUpdateCoordinator, 
     UpdateFailed
-)
-
-from homeassistant.util import (
-    Throttle
 )
 
 from .schemas import (
@@ -73,7 +65,7 @@ from .client import (
     BinanceRequestException
 )
 
-__version__ = "2.0.17"
+__version__ = "2.0.18"
 REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)

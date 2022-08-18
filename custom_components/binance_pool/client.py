@@ -1,12 +1,7 @@
 import logging
 
 from aiohttp import (
-    ClientResponse, 
     ClientSession
-)
-
-from aiohttp.connector import (
-    TCPConnector
 )
 
 from binance.client import (
