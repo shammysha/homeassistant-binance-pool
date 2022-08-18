@@ -1,7 +1,12 @@
 import logging
 
 from aiohttp import (
-    ClientResponse
+    ClientResponse, 
+    ClientSession
+)
+
+from aiohttp.connector import (
+    TCPConnector
 )
 
 from binance.client import (
@@ -21,6 +26,12 @@ class BinancePoolClient(AsyncClient):
     MINING_API_VERSION = 'v1'
     BALANCES_API_VERSION = 'v1'
     RECV_WINDOW = 50000
+    
+    def _init_session(self) -> ClientSession:
+        return ClientSession(
+            loop=self.loop,
+            headers=self._get_headers()
+        )
     
     def _get_request_kwargs(self, method, signed: bool, force_params: bool = False, **kwargs):
         if signed:
