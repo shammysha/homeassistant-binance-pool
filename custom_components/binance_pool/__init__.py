@@ -278,7 +278,9 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             COORDINATOR_WALLET: binance_data_wallet
         },
         'sensors': sensors,
-        'listener': config_entry.add_update_listener(async_reload_entry)
+        'listeners': [
+            config_entry.add_update_listener(async_reload_entry)
+        ]
     }                        
                         
     if sensors:
@@ -289,10 +291,16 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     return True
    
    
+async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
+    await hass.config_entries.async_unload_entry(config_entry.entry_id)
+    
+    return True   
+
 async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
     _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")
     await hass.config_entries.async_reload(config_entry.entry_id)   
    
+    return True
 
 async def async_migrate_entry(hass, config_entry: ConfigEntry):
     _LOGGER.debug("Migrating from version %s to %s", config_entry.version, FLOW_VERSION)
