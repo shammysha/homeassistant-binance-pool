@@ -333,6 +333,7 @@ class BinanceDataMining(DataUpdateCoordinator):
         
         for account in miners:
             self.mining[account] = {}
+            _LOGGER.debug(f"self.mining add {account}")
 
     async def _async_update_data(self):
         _LOGGER.debug(f"Fetching mining data from binance.{self.tld}")

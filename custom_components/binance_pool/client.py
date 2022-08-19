@@ -83,7 +83,7 @@ class BinancePoolClient(AsyncClient):
     async def async_get_mining_worker_list(self, **params):
         """ Request for Miner List (USER_DATA)
 
-            https://binance-docs.github.io/apidocs/spot/en/#earnings-list-user_data
+            https://binance-docs.github.io/apidocs/spot/en/#request-for-miner-list-user_data
         """
         return await self.async_request_mining_api('get', 'worker/list', True, data=params)        
         
