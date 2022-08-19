@@ -293,14 +293,19 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
     name = hass.data[DOMAIN][config_entry.entry_id]['config'][CONF_NAME].lower()
     coordinators = hass.data[DOMAIN][config_entry.entry_id]['coordinator'].values()
     
-    for config_entry in hass.config_entries.async_entries("sensor"):
-        if config_entry.unique_id.startswith(name):
-            _LOGGER.debug('Entity is: %s', config_entry.unique_id)
+    _LOGGER.debug('Name is: %s', name)
+    
+    for entry in hass.config_entries.async_entries("sensor"):
+        _LOGGER.debug('Entity is: %s', entry.unique_id)
+        if entry.unique_id.startswith(name):
+            _LOGGER.debug('Entity found!: %s', entry.unique_id)
+        else:
+            _LOGGER.debug('Entity is: %s', entry.unique_id)
     
     unload_ops = [
         hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
     ] + [
-        coordinator.client.close_connection() for coordinator in hass.data[DOMAIN][config_entry.entry_id]['coordinator'].values()
+        coordinator.client.close_connection() for coordinator in coordinators
     ]
 
     res = await gather(*unload_ops, return_exceptions=True)
