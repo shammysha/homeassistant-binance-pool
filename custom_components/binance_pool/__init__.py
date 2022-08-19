@@ -278,9 +278,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             COORDINATOR_WALLET: binance_data_wallet
         },
         'sensors': sensors,
-        'listeners': [
-            config_entry.add_update_listener(async_reload_entry)
-        ]
+        'listener': config_entry.add_update_listener(async_reload_entry)
     }                        
                         
     if sensors:
@@ -292,7 +290,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
+    hass.data[DOMAIN][config_entry.entry_id]['listener']()
     
     return True   
 
