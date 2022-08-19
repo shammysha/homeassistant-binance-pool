@@ -18,7 +18,7 @@ Added pool monitoring functionality
 ---
 In order to use this integration, you need to first [Register an account with Binance](https://accounts.binance.com/en/register), and then [generate an API key](https://www.binance.com/en/my/settings/api-management) from the "API Management" settings section.
 
-To use this component add new integration via HomeAssistant GUI or add the following to your `configuration.yaml` file: 
+To use this component, add new integration via HomeAssistant GUI or add the following to your `configuration.yaml` file: 
 
 ```yaml
 binance_pool:

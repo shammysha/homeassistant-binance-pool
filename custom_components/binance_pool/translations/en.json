@@ -3,7 +3,8 @@
         "abort": {
             "already_exists": "Record with same name already exists.",
             "empty_config": "Config looks like empty.",
-            "empty auth data": "Can not authorize on Binance API (empty api_key or api_secret)"
+            "empty auth data": "Can not authorize on Binance API (empty api_key or api_secret)",
+            "api_error": "Can not authorize on Binance API (please, check API key and API secret)"
         },
         "step": {
             "user": {
@@ -13,7 +14,7 @@
                     "api_secret": "Binance API secret",
                     "domain": "Register domain"
                 },
-                "description": "Come up with a unique name for the integration.\n\nSpecify the domain in which the account is registered, as well as data for connecting to the Binance API.\n\nConnection data can be obtained in the profile settings (\"API Management\")",
+                "description": "Come up with a unique name for the integration.\n\nSpecify the domain in which the account is registered, as well as data for connecting to the Binance API.\n\nConnection data can be obtained in the profile settings (\"API Management\") on Binance site",
                 "title": "Main Settings"
             },
             "options": {

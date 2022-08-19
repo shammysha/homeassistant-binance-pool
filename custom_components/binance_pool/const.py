@@ -1,3 +1,5 @@
+FLOW_VERSION = 6
+
 DOMAIN = "binance_pool"
 
 DEFAULT_NAME = "Binance"
@@ -12,8 +14,6 @@ CONF_MINING = "miners"
 CONF_DOMAIN = "domain"
 CONF_NATIVE_CURRENCY = "native_currency"
 
-FLOW_VERSION = 6
-
 MIN_TIME_BETWEEN_UPDATES = 1
 MIN_TIME_BETWEEN_MINING_UPDATES = 5
 
@@ -24,7 +24,8 @@ CURRENCY_ICONS = {
     "BTC": "mdi:currency-btc",
     "BSV": "mdi:bitcoin",
     "BCH": "mdi:bitcoin",    
-    "ETH": "mdi:currency-eth",
+    "ETH": "mdi:ethereum",
+    "ETC": "mdi:currency-eth",
     "EUR": "mdi:currency-eur",
     "LTC": "mdi:litecoin",
     "USD": "mdi:currency-usd",

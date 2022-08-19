@@ -56,7 +56,8 @@ from .const import (
     MIN_TIME_BETWEEN_MINING_UPDATES,
     COORDINATOR_MINING,
     COORDINATOR_WALLET,
-    FLOW_VERSION    
+    FLOW_VERSION,
+    VERSION    
 )
 
 from .client import (
@@ -64,9 +65,6 @@ from .client import (
     BinanceAPIException, 
     BinanceRequestException
 )
-
-__version__ = "2.0.18"
-REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -146,6 +144,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
         if isinstance(r, Exception): 
             await binance_data_wallet.client.close_connection()
             await binance_data_mining.client.close_connection()
+            _LOGGER.debug("Exception!: %s", r)
             raise r
     
     sensors = []
@@ -279,7 +278,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             COORDINATOR_MINING: binance_data_mining,
             COORDINATOR_WALLET: binance_data_wallet
         },
-        'sensors': sensors
+        'sensors': sensors,
+        'listener': config_entry.add_update_listener(async_reload_entry)
     }                        
                         
     if sensors:

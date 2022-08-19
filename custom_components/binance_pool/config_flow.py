@@ -273,7 +273,7 @@ class BinancePoolOptionsFlow(OptionsFlow):
     async def async_fetch_api_data(self, user_input: Optional[ConfigType] = None):
         if not self.api_data:
         
-            from .client import BinancePoolClient, BinanceAPIException, BinanceRequestException
+            from .client import BinancePoolClient
                             
             client = BinancePoolClient(user_input[CONF_API_KEY], user_input[CONF_API_SECRET], tld=user_input[CONF_DOMAIN])
      
@@ -303,43 +303,46 @@ class BinancePoolOptionsFlow(OptionsFlow):
         errors = {}
 
         if user_input:    
-            await self.async_fetch_api_data(user_input)
-
-            self.save_data.update({
-                CONF_NAME: user_input[CONF_NAME],
-                CONF_API_KEY: user_input[CONF_API_KEY],
-                CONF_API_SECRET: user_input[CONF_API_SECRET],
-                CONF_DOMAIN: user_input[CONF_DOMAIN]
-            })
-
-            return self.async_show_form(
-                step_id = "options",
-                data_schema = vol.Schema({
-                    vol.Optional(CONF_BALANCES, default=self.save_data.get(CONF_BALANCES, DEFAULT_BALANCES)): selector({ 
-                        'select': {
-                            'options': self.coins,
-                            'multiple': True,
-                            'mode': 'dropdown'
-                        }
+            try:
+                await self.async_fetch_api_data(user_input)
+            except :
+                errors['base'] = 'api_error' 
+            else:
+                self.save_data.update({
+                    CONF_NAME: user_input[CONF_NAME],
+                    CONF_API_KEY: user_input[CONF_API_KEY],
+                    CONF_API_SECRET: user_input[CONF_API_SECRET],
+                    CONF_DOMAIN: user_input[CONF_DOMAIN]
+                })
+    
+                return self.async_show_form(
+                    step_id = "options",
+                    data_schema = vol.Schema({
+                        vol.Optional(CONF_BALANCES, default=self.save_data.get(CONF_BALANCES, DEFAULT_BALANCES)): selector({ 
+                            'select': {
+                                'options': self.coins,
+                                'multiple': True,
+                                'mode': 'dropdown'
+                            }
+                        }),
+                        vol.Optional(CONF_EXCHANGES, default=self.save_data.get(CONF_EXCHANGES, DEFAULT_EXCHANGES)): selector({ 
+                            'select': {
+                                'options': self.assets,
+                                'multiple': True,
+                                'mode': 'dropdown'
+                            }            
+                        }),
+                        vol.Optional(CONF_NATIVE_CURRENCY, default=self.save_data.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY)): selector({ 
+                            'select': {
+                                'options': self.coins,
+                                'multiple': True,
+                                'mode': 'dropdown'
+                            }            
+                        }),
+                        vol.Optional(CONF_MINING, default=', '.join(self.save_data.get(CONF_MINING, []))): cv.string
                     }),
-                    vol.Optional(CONF_EXCHANGES, default=self.save_data.get(CONF_EXCHANGES, DEFAULT_EXCHANGES)): selector({ 
-                        'select': {
-                            'options': self.assets,
-                            'multiple': True,
-                            'mode': 'dropdown'
-                        }            
-                    }),
-                    vol.Optional(CONF_NATIVE_CURRENCY, default=self.save_data.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY)): selector({ 
-                        'select': {
-                            'options': self.coins,
-                            'multiple': True,
-                            'mode': 'dropdown'
-                        }            
-                    }),
-                    vol.Optional(CONF_MINING, default=', '.join(self.save_data.get(CONF_MINING, []))): cv.string
-                }),
-                errors=errors
-            )
+                    errors=errors
+                )
     
         else:
             user_input = {}
