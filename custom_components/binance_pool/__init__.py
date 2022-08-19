@@ -292,7 +292,6 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
     await hass.config_entries.async_unload(config_entry.entry_id)
     
     return True   
