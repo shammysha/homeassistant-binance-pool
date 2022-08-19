@@ -279,7 +279,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
         },
         'sensors': sensors,
         'listeners': [
-            config_entry.add_update_listener(async_reload_entry)
+            config_entry.add_update_listener(async_reload_entry),
+            config_entry.add_update_listener(async_unload_entry)
         ]
     }                        
                         
