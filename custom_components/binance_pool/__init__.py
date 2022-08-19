@@ -290,9 +290,19 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    unload_ok = await hass.config_entries.async_unload_platforms(config_entry, "sensor")
+    _LOGGER.debug("")
+    unload_ops = [
+        hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
+    ] + [
+        coordinator.client.close_connection() for coordinator in hass.data[DOMAIN][config_entry.entry_id]['coordinator'].values()
+    ]
+
+    unload_ok = all( 
+        await gather(*unload_ops)
+    )   
     
-    hass.data[DOMAIN].pop(config_entry.entry_id)
+    if unload_ok:
+        hass.data[DOMAIN].pop(config_entry.entry_id)
     
     return unload_ok   
 
@@ -332,7 +342,6 @@ class BinanceDataMining(DataUpdateCoordinator):
         
         for account in miners:
             self.mining[account] = {}
-            _LOGGER.debug(f"self.mining add {account}")
 
     async def _async_update_data(self):
         _LOGGER.debug(f"Fetching mining data from binance.{self.tld}")
