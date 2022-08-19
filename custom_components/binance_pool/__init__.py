@@ -290,7 +290,6 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    _LOGGER.debug("")
     unload_ops = [
         hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
     ] + [
