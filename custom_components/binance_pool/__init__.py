@@ -279,8 +279,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
         },
         'sensors': sensors,
         'listeners': [
-            config_entry.add_update_listener(async_reload_entry),
-            config_entry.add_update_listener(async_unload_entry)
+            config_entry.add_update_listener(async_reload_entry)
         ]
     }                        
                         
@@ -293,7 +292,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    await hass.config_entries.async_unload(config_entry.entry_id)
+    await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
     
     return True   
 
