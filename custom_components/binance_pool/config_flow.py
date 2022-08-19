@@ -177,7 +177,7 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
                 CONF_BALANCES: user_input.get(CONF_BALANCES, DEFAULT_BALANCES),
                 CONF_EXCHANGES: user_input.get(CONF_EXCHANGES, DEFAULT_EXCHANGES),
                 CONF_NATIVE_CURRENCY: user_input.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY),
-                CONF_MINING: re.split(r'p\s\,]+', user_input.get(CONF_MINING, []))
+                CONF_MINING: re.split(r'[\s\,]+', user_input.get(CONF_MINING, []))
             })
                 
             return self._save_config(self.save_data)
@@ -372,7 +372,7 @@ class BinancePoolOptionsFlow(OptionsFlow):
                 CONF_BALANCES: user_input.get(CONF_BALANCES, DEFAULT_BALANCES),
                 CONF_EXCHANGES: user_input.get(CONF_EXCHANGES, DEFAULT_EXCHANGES),
                 CONF_NATIVE_CURRENCY: user_input.get(CONF_NATIVE_CURRENCY, DEFAULT_CURRENCY),
-                CONF_MINING: re.split(r'p\s\,]+', user_input.get(CONF_MINING, []))
+                CONF_MINING: re.split(r'[\s\,]+', user_input.get(CONF_MINING, []))
             })
             
             self.hass.config_entries.async_update_entry(config_entry, unique_id=self.save_data[CONF_NAME], data=self.save_data)
