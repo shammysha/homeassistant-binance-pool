@@ -296,14 +296,15 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
         coordinator.client.close_connection() for coordinator in hass.data[DOMAIN][config_entry.entry_id]['coordinator'].values()
     ]
 
-    unload_ok = all( 
-        await gather(*unload_ops)
-    )   
+    res = await gather(*unload_ops, True)
+    for r in res:
+        if isinstance(r, Exception):
+            if not isinstance(r, ValueError): 
+                raise r
     
-    if unload_ok:
-        hass.data[DOMAIN].pop(config_entry.entry_id)
+    hass.data[DOMAIN].pop(config_entry.entry_id)
     
-    return unload_ok   
+    return True   
 
 async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
     _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")
