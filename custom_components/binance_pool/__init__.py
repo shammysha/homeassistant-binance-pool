@@ -56,8 +56,7 @@ from .const import (
     MIN_TIME_BETWEEN_MINING_UPDATES,
     COORDINATOR_MINING,
     COORDINATOR_WALLET,
-    FLOW_VERSION,
-    VERSION    
+    FLOW_VERSION
 )
 
 from .client import (
