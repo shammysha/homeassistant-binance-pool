@@ -293,7 +293,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    await hass.config_entries.async_unload_entry(config_entry.entry_id)
+    await hass.config_entries.async_unload(config_entry.entry_id)
     
     return True   
 
