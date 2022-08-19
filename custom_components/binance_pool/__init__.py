@@ -296,7 +296,7 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
         coordinator.client.close_connection() for coordinator in hass.data[DOMAIN][config_entry.entry_id]['coordinator'].values()
     ]
 
-    res = await gather(*unload_ops, True)
+    res = await gather(*unload_ops, return_exceptions=True)
     for r in res:
         if isinstance(r, Exception):
             if not isinstance(r, ValueError): 
