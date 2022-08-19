@@ -141,9 +141,9 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     
     for r in res:
         if isinstance(r, Exception): 
+            _LOGGER.debug('Exception: %s', str(r))
             await binance_data_wallet.client.close_connection()
             await binance_data_mining.client.close_connection()
-            _LOGGER.debug("Exception!: %s", r)
             raise r
     
     sensors = []
@@ -351,6 +351,8 @@ class BinanceDataMining(DataUpdateCoordinator):
                 res = await gather(*common_queries, return_exceptions=True)
                 for r in res:
                     if isinstance(r, Exception): 
+                        _LOGGER.debug('Catched Exception: %s', str(r))
+                        
                         await self.client.close_connection()
                         raise r
                                                         
@@ -417,6 +419,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
             res = await gather(*tasks, return_exceptions=True)
             for r in res:
                 if isinstance(r, Exception):
+                    _LOGGER.debug('Catched Exception: %s', str(r))
                     await self.client.close_connection()
                     raise r
                 
