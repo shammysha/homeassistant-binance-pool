@@ -290,10 +290,11 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    await hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
-    hass.data[DOMAIN][config_entry.entry_id]['listener']()
+    unload_ok = await hass.config_entries.async_unload_platforms(config_entry, "sensor")
     
-    return True   
+    hass.data[DOMAIN].pop(config_entry.entry_id)
+    
+    return unload_ok   
 
 async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
     _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")
