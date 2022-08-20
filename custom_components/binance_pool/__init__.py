@@ -301,6 +301,7 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
     for entity in er.async_entries_for_config_entry(ent_reg, config_entry.entry_id):
         if entity.entity_id.startswith('sensor'):
             _LOGGER.debug('Entity found!: %s', entity)
+            ent_reg._async_update_entity(entity.entity_id, new_unique_id = f'remove_{entity.unique_id}')
             ent_reg.async_remove(entity.entity_id)
     
     unload_ops = [
