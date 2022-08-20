@@ -174,7 +174,7 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
         self._name = name
         self._state = None
         
-        self._handle_coordinator_update(self)         
+        self._handle_coordinator_update()         
         
         
     @property
