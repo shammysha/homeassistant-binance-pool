@@ -165,7 +165,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
     
         if sensor:
-            async_add_entities([sensor], True)
+            async_add_entities([sensor], False)
 
 class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator:CoordinatorEntity, name:str):
@@ -209,7 +209,6 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
     @callback
     def _handle_coordinator_update(self) -> None:
         raise Exception('Unimplemented')
-
 
     
 class BinanceBalanceSensor(BinanceSensorEntity):
