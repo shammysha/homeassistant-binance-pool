@@ -279,9 +279,10 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             COORDINATOR_MINING: binance_data_mining,
             COORDINATOR_WALLET: binance_data_wallet
         },
-        'sensors': sensors,
-        'listener': config_entry.add_update_listener(async_reload_entry)
-    }                        
+        'sensors': sensors
+    }
+    
+    config_entry.async_on_unload(config_entry.add_update_listener(async_reload_entry))
                         
     if sensors:
         hass.async_create_task(
