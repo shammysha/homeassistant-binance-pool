@@ -203,10 +203,6 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
         raise Exception('Unimplemented')
     
     @callback
-    async def async_added_to_hass(self):
-        self._handle_coordinator_update()
-        
-    @callback
     def _handle_coordinator_update(self) -> None:
         raise Exception('Unimplemented')
 
@@ -260,6 +256,10 @@ class BinanceBalanceSensor(BinanceSensorEntity):
          
         return data
 
+    @callback
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()
+        
     @callback
     def _handle_coordinator_update(self) -> None:
         for balance in self.coordinator.balances:
