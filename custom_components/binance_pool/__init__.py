@@ -290,13 +290,12 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
    
    
 async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
-    name = hass.data[DOMAIN][config_entry.entry_id]['config'][CONF_NAME].lower()
+    name = config_entry.data[CONF_NAME].lower()
     coordinators = hass.data[DOMAIN][config_entry.entry_id]['coordinator'].values()
     
     _LOGGER.debug('Name is: %s', name)
     
-    for entry in hass.config_entries.async_entries("sensor"):
-        _LOGGER.debug('Entity is: %s', entry.unique_id)
+    for entry in hass.config_entries.async_entries(DOMAIN):
         if entry.unique_id.startswith(name):
             _LOGGER.debug('Entity found!: %s', entry.unique_id)
         else:
