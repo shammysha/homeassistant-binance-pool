@@ -203,6 +203,10 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
         raise Exception('Unimplemented')
     
     @callback
+    async def async_added_to_hass(self):
+        raise Exception('Unimplemented')
+    
+    @callback
     def _handle_coordinator_update(self) -> None:
         raise Exception('Unimplemented')
 
@@ -344,6 +348,10 @@ class BinanceFundingSensor(BinanceSensorEntity):
         return data
 
     @callback
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()
+
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -442,6 +450,10 @@ class BinanceSavingsSensor(BinanceSensorEntity):
         return data
 
     @callback
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()
+
+    @callback
     def _handle_coordinator_update(self) -> None:
         """Update current values."""
         
@@ -501,6 +513,10 @@ class BinanceExchangeSensor(BinanceSensorEntity):
         return {
             ATTR_ATTRIBUTION: ATTRIBUTION,
         }
+
+    @callback
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()
 
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -589,6 +605,10 @@ class BinanceWorkerSensor(BinanceSensorEntity):
             data[ATTR_WORKER_STATUS] = "unknown"
         
         return data
+
+    @callback
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()
         
     @callback        
     def _handle_coordinator_update(self) -> None:
@@ -679,6 +699,10 @@ class BinanceStatusSensor(BinanceSensorEntity):
             ATTR_ACCOUNT: f"{self._account}",
             ATTR_ALGO: f"{self._algorithm}",
         }
+
+    @callback
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()
         
     @callback        
     def _handle_coordinator_update(self) -> None:
@@ -781,6 +805,10 @@ class BinanceProfitSensor(BinanceSensorEntity):
                 data[f"Native estimate in {asset}"] = exchange            
         
         return data
+
+    @callback
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()
         
     @callback        
     def _handle_coordinator_update(self) -> None:
