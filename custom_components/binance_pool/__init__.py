@@ -148,7 +148,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             await binance_data_mining.client.close_connection()
             raise r
     
-    sensors = [ {'dummy': None } ]
+    sensors = []
     
     if hasattr(binance_data_wallet, "balances"):
         for balance in binance_data_wallet.balances:
@@ -206,11 +206,11 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     if hasattr(binance_data_mining, "mining"):
         for account, algos in binance_data_mining.mining.items():
             if not config[CONF_MINING] or account in config[CONF_MINING]:
-                for algo, type in algos.items():
+                for algo, typ in algos.items():
                     unknown = invalid = inactive = 0
                     
-                    if "workers" in type:
-                        for worker in type["workers"]:
+                    if "workers" in typ:
+                        for worker in typ["workers"]:
                             worker["name"] = name
                             worker["algorithm"] = algo
                             worker["account"] = account
@@ -224,8 +224,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                             elif worker["status"] == 3:
                                 inactive += 1    
                             
-                    if "status" in type:
-                        status = copy.deepcopy(type["status"])
+                    if "status" in typ:
+                        status = copy.deepcopy(typ["status"])
                         status["name"] = name
                         status["algorithm"] = algo
                         status["account"] = account
@@ -297,28 +297,22 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
     
     _LOGGER.debug('Name is: %s', name)
     
-    ent_reg = er.async_get(hass)
-    for entity in er.async_entries_for_config_entry(ent_reg, config_entry.entry_id):
-        if entity.entity_id.startswith('sensor'):
-            _LOGGER.debug('Entity found!: %s', entity)
-            ent_reg._async_update_entity(entity.entity_id, new_unique_id = f'remove_{entity.unique_id}')
-            ent_reg.async_remove(entity.entity_id)
-    
     unload_ops = [
         hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
     ] + [
         coordinator.client.close_connection() for coordinator in coordinators
     ]
 
-    res = await gather(*unload_ops, return_exceptions=True)
-    for r in res:
-        if isinstance(r, Exception):
-            if not isinstance(r, ValueError): 
-                raise r
+    res = await gather(*unload_ops)
+    ent_reg = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(ent_reg, config_entry.entry_id):
+        if entity.entity_id.startswith('sensor'):
+            _LOGGER.debug('Entity found!: %s', entity)
+            ent_reg.async_remove(entity.entity_id)
     
     hass.data[DOMAIN].pop(config_entry.entry_id)
     
-    return True   
+    return False   
 
 async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
     _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")

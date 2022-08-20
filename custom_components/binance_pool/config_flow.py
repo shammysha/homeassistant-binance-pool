@@ -106,8 +106,8 @@ class BinancePoolConfigFlow(ConfigFlow, domain=DOMAIN):
                 else:
                     coins, tickers = res   
             
-                    self.coins = [ x['coin'] for y, x in enumerate(coins) ]
-                    self.assets = [ x['symbol'] for y, x in enumerate(tickers) ]
+                    self.coins = [ x['coin'] for x in list(coins) ]
+                    self.assets = [ x['symbol'] for x in list(tickers) ]
             
                 finally:
                     await client.close_connection()
@@ -290,8 +290,8 @@ class BinancePoolOptionsFlow(OptionsFlow):
                      
             coins, tickers = res   
             
-            self.coins = [ x['coin'] for y, x in enumerate(coins) ]
-            self.assets = [ x['symbol'] for y, x in enumerate(tickers) ]
+            self.coins = [ x['coin'] for x in coins ]
+            self.assets = [ x['symbol'] for x in tickers ]
             self.api_data = True
 
 

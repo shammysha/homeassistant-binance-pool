@@ -8,10 +8,7 @@ from binance.client import (
     AsyncClient
 )
 
-from binance.exceptions import (
-    BinanceAPIException, 
-    BinanceRequestException
-)
+from binance.exceptions import *
 
 _LOGGER = logging.getLogger(__name__)
 
