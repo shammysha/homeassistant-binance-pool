@@ -5,6 +5,8 @@ from datetime import (
 import logging
 import copy
 
+import homeassistant.helpers.entity_registry as er
+
 from typing import (
     Dict, 
     Final, 
@@ -146,7 +148,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             await binance_data_mining.client.close_connection()
             raise r
     
-    sensors = []
+    sensors = [ {'dummy': None } ]
     
     if hasattr(binance_data_wallet, "balances"):
         for balance in binance_data_wallet.balances:
@@ -295,11 +297,9 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
     
     _LOGGER.debug('Name is: %s', name)
     
-    for entry in hass.config_entries.async_entries():
-        if entry.domain.startswith(name):
-            _LOGGER.debug('Entity found!: %s', entry.unique_id)
-        else:
-            _LOGGER.debug('Entity is: %s', entry.unique_id)
+    ent_reg = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(ent_reg, config_entry.entry_id):
+        _LOGGER.debug('Entity found!: %s', entity)
     
     unload_ops = [
         hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
