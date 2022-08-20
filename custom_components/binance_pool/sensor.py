@@ -165,14 +165,16 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
     
         if sensor:
-            async_add_entities([sensor], True)
+            async_add_entities([sensor], False)
 
 class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator:CoordinatorEntity, name:str):
         super().__init__(coordinator)
         
-        self._state = None
         self._name = name
+        self._state = None
+        
+        self._handle_coordinator_update(self)         
         
         
     @property
@@ -213,8 +215,6 @@ class BinanceBalanceSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
     
     def __init__(self, coordinator, name, coin, free, locked, freeze, native = []):
-        super().__init__(coordinator = coordinator, name = f"{name} {coin} Balance")
-        
         """Initialize the sensor."""
         self._coin = coin
         self._free = free
@@ -223,8 +223,12 @@ class BinanceBalanceSensor(BinanceSensorEntity):
         self._native = native
         self._unit_of_measurement = coin
         self._total = float(free) + float(locked) + float(freeze)
-        self._state = None
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {} }
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {coin} Balance"
+        )
 
     @property
     def unit_of_measurement(self):
@@ -292,10 +296,7 @@ class BinanceFundingSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, coin, free, locked, freeze, withdrawing, native = []):
-        super().__init__(coordinator = coordinator, name = f"{name} {coin} Funding")
-        
         """Initialize the sensor."""
-       
         self._coin = coin
         self._free = free
         self._locked = locked
@@ -305,6 +306,11 @@ class BinanceFundingSensor(BinanceSensorEntity):
         self._unit_of_measurement = coin
         self._total = float(free) + float(locked) + float(freeze)
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {}, "withdrawing": {} }
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {coin} Funding"
+        )        
 
     @property
     def unit_of_measurement(self):
@@ -391,8 +397,6 @@ class BinanceSavingsSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, coin, total, fixed, flexible, native = []):
-        super().__init__(coordinator = coordinator, name = f"{name} {coin} Savings")
-        
         """Initialize the sensor."""
         self._coin = coin
         self._total = total
@@ -401,6 +405,12 @@ class BinanceSavingsSensor(BinanceSensorEntity):
         self._native = native
         self._unit_of_measurement = coin
         self._native_balance = { "total" : {}, "fixed": {}, "flexible": {} }
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {coin} Savings"
+        )        
+        
 
     @property
     def unit_of_measurement(self):
@@ -463,12 +473,15 @@ class BinanceExchangeSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, symbol, price):
-        super().__init__(coordinator = coordinator, name = f"{name} {symbol} Exchange")
-                
         """Initialize the sensor."""
         self._symbol = symbol
         self._price = price
         self._unit_of_measurement = None
+
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {symbol} Exchange"
+        )
 
     @property
     def unit_of_measurement(self):
@@ -521,8 +534,6 @@ class BinanceWorkerSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update):
-        super().__init__(coordinator = coordinator, name = f"{name} {account}.{worker} ({algorithm}) worker")
-        
         """Initialize the sensor."""
         self._account = account
         self._algorithm = algorithm
@@ -536,6 +547,11 @@ class BinanceWorkerSensor(BinanceSensorEntity):
         
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
         self._status_icons = ["mdi:sync-off", "mdi:server-network", "mdi:server-network-off", "mdi:power-plug-off"]
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {account}.{worker} ({algorithm}) worker"
+        )        
 
     @property
     def unit_of_measurement(self):
@@ -617,8 +633,6 @@ class BinanceStatusSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive):
-        super().__init__(coordinator = coordinator, name = f"{name} {account} ({algorithm}) status")
-        
         """Initialize the sensor."""
         self._account = account
         self._algorithm = algorithm
@@ -632,6 +646,11 @@ class BinanceStatusSensor(BinanceSensorEntity):
         self._unit_of_measurement = "H/s"        
 
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {account} ({algorithm}) status"
+        )        
 
     @property
     def unit_of_measurement(self):
@@ -712,8 +731,6 @@ class BinanceProfitSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native = []):
-        super().__init__(coordinator = coordinator, name = f"{name} {account} ({algorithm}) {coin} profit")
-        
         """Initialize the sensor."""
         self._account = account
         self._algorithm = algorithm
@@ -725,6 +742,11 @@ class BinanceProfitSensor(BinanceSensorEntity):
         self._native_earnings = {}
         self._native_estimate = {}
         self._wallet = wallet
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {account} ({algorithm}) {coin} profit"
+        )        
         
     @property
     def unit_of_measurement(self):
