@@ -169,7 +169,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
 class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
     def __init__(self, coordinator:CoordinatorEntity, name:str):
-        super().__init__(coordinator)
+        super().__init__(coordinator = coordinator)
         
         self._name = name
         self._state = None
@@ -202,9 +202,14 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self):
         raise Exception('Unimplemented')
     
-    @callback
     async def async_added_to_hass(self):
         self._handle_coordinator_update()    
+        
+        self.async_on_remove(
+            self.coordinator.async_add_listener(
+                self._handle_coordinator_update, self.coordinator_context
+            )
+        )        
     
     @callback
     def _handle_coordinator_update(self) -> None:
@@ -259,10 +264,6 @@ class BinanceBalanceSensor(BinanceSensorEntity):
          
         return data
 
-    @callback
-    async def async_added_to_hass(self):
-        self._handle_coordinator_update()
-        
     @callback
     def _handle_coordinator_update(self) -> None:
         for balance in self.coordinator.balances:
