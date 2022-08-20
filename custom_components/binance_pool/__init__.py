@@ -295,8 +295,8 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
     
     _LOGGER.debug('Name is: %s', name)
     
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.unique_id.startswith(name):
+    for entry in hass.config_entries.async_entries():
+        if entry.domain.startswith(name):
             _LOGGER.debug('Entity found!: %s', entry.unique_id)
         else:
             _LOGGER.debug('Entity is: %s', entry.unique_id)
