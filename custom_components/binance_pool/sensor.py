@@ -203,7 +203,7 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
         raise Exception('Unimplemented')
     
     @callback
-    def async_added_to_hass(self):
+    async def async_added_to_hass(self):
         self._handle_coordinator_update()
         
     @callback
