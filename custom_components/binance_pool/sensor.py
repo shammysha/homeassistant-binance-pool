@@ -174,8 +174,6 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
         self._name = name
         self._state = None
         
-        self._handle_coordinator_update()         
-        
         
     @property
     def unique_id(self):
@@ -204,7 +202,10 @@ class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self):
         raise Exception('Unimplemented')
     
-    
+    @callback
+    def async_added_to_hass(self):
+        self._handle_coordinator_update()
+        
     @callback
     def _handle_coordinator_update(self) -> None:
         raise Exception('Unimplemented')
