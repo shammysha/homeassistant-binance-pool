@@ -66,6 +66,7 @@ from .client import (
     BinanceAPIException, 
     BinanceRequestException
 )
+from Lib.pickle import TRUE
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -311,8 +312,8 @@ async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
             ent_reg.async_remove(entity.entity_id)
     
     hass.data[DOMAIN].pop(config_entry.entry_id)
-    
-    return False   
+
+    return True   
 
 async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
     _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")
