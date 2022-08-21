@@ -1,22 +1,14 @@
 import logging
 
 from aiohttp import (
-    ClientResponse, 
     ClientSession
-)
-
-from aiohttp.connector import (
-    TCPConnector
 )
 
 from binance.client import (
     AsyncClient
 )
 
-from binance.exceptions import (
-    BinanceAPIException, 
-    BinanceRequestException
-)
+from binance.exceptions import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -88,7 +80,7 @@ class BinancePoolClient(AsyncClient):
     async def async_get_mining_worker_list(self, **params):
         """ Request for Miner List (USER_DATA)
 
-            https://binance-docs.github.io/apidocs/spot/en/#earnings-list-user_data
+            https://binance-docs.github.io/apidocs/spot/en/#request-for-miner-list-user_data
         """
         return await self.async_request_mining_api('get', 'worker/list', True, data=params)        
         

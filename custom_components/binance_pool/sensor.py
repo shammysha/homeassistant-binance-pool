@@ -28,7 +28,6 @@ from homeassistant.helpers.update_coordinator import (
 from .const import (
     DOMAIN,
     CURRENCY_ICONS,
-    DEFAULT_COIN_ICON,
     EXCHANGES_ICON,
     STATUS_ICON,
 
@@ -38,7 +37,6 @@ from .const import (
     ATTR_FREEZE,
     ATTR_WITHDRAW,
     ATTR_TOTAL,
-    ATTR_NATIVE_BALANCE,
     ATTR_FLEXIBLE,
     ATTR_FIXED,
     
@@ -89,7 +87,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             freeze = sensor_data["freeze"]
             native = sensor_data["native"]
     
-            sensor = BinanceSensor(coordinator, name, coin, free, locked, freeze, native)
+            sensor = BinanceBalanceSensor(coordinator, name, coin, free, locked, freeze, native)
             
         elif all(i in sensor_data for i in ["name", "asset", "free", "locked", "freeze", "withdrawing", "native"]):
             coordinator = coordinators[COORDINATOR_WALLET]        
@@ -167,16 +165,62 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             sensor = BinanceProfitSensor(coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native)        
     
         if sensor:
-            async_add_entities([sensor], True)
+            async_add_entities([sensor], False)
 
-class BinanceSensor(CoordinatorEntity, SensorEntity):
+class BinanceSensorEntity(CoordinatorEntity, SensorEntity):
+    def __init__(self, coordinator:CoordinatorEntity, name:str):
+        super().__init__(coordinator = coordinator)
+        
+        self._name = name
+        self._state = None
+        
+        
+    @property
+    def unique_id(self):
+        return slugify(text = self._name, separator = '-')
+    
+    @property
+    def name(self):
+        """Return the name of the sensor."""
+        return self._name
+    
+    @property
+    def state(self):
+        """Return the state of the sensor."""
+
+        return self._state
+    
+    @property
+    def unit_of_measurement(self):
+        raise Exception('Unimplemented')
+
+    @property
+    def icon(self):
+        raise Exception('Unimplemented')
+
+    @property
+    def extra_state_attributes(self):
+        raise Exception('Unimplemented')
+    
+    async def async_added_to_hass(self):
+        self._handle_coordinator_update()    
+        
+        self.async_on_remove(
+            self.coordinator.async_add_listener(
+                self._handle_coordinator_update, self.coordinator_context
+            )
+        )        
+    
+    @callback
+    def _handle_coordinator_update(self) -> None:
+        raise Exception('Unimplemented')
+
+    
+class BinanceBalanceSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
     
     def __init__(self, coordinator, name, coin, free, locked, freeze, native = []):
-        super().__init__(coordinator)
-        
         """Initialize the sensor."""
-        self._name = f"{name} {coin} Balance"
         self._coin = coin
         self._free = free
         self._locked = locked
@@ -184,23 +228,12 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         self._native = native
         self._unit_of_measurement = coin
         self._total = float(free) + float(locked) + float(freeze)
-        self._state = None
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {} }
-
-    @property
-    def unique_id(self):
-        return slugify(text = self._name, separator = '-')
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-
-        return self._state
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {coin} Balance"
+        )
 
     @property
     def unit_of_measurement(self):
@@ -225,9 +258,9 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
             ATTR_TOTAL: "{:.8f}".format(float(self._total)),
         }
         
-        for type, native in self._native_balance.items():
+        for typ, native in self._native_balance.items():
             for asset, exchange in native.items(): 
-                data[f"Native {type} balance in {asset}"] = exchange
+                data[f"Native {typ} balance in {asset}"] = exchange
          
         return data
 
@@ -264,15 +297,11 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
 
         self.async_write_ha_state()
         
-class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
+class BinanceFundingSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, coin, free, locked, freeze, withdrawing, native = []):
-        super().__init__(coordinator)
-        
         """Initialize the sensor."""
-       
-        self._name = f"{name} {coin} Funding"
         self._coin = coin
         self._free = free
         self._locked = locked
@@ -281,23 +310,12 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
         self._native = native
         self._unit_of_measurement = coin
         self._total = float(free) + float(locked) + float(freeze)
-        self._state = None
         self._native_balance = { "total" : {}, "free": {}, "freeze": {}, "locked": {}, "withdrawing": {} }
-
-    @property
-    def unique_id(self):
-        return slugify(text = self._name, separator = '-')
-    
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-
-        return self._state
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {coin} Funding"
+        )        
 
     @property
     def unit_of_measurement(self):
@@ -323,9 +341,9 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
             ATTR_TOTAL: "{:.8f}".format(float(self._total)),
         }
         
-        for type, native in self._native_balance.items():
+        for typ, native in self._native_balance.items():
             for asset, exchange in native.items(): 
-                data[f"Native {type} funding in {asset}"] = exchange
+                data[f"Native {typ} funding in {asset}"] = exchange
          
         return data
 
@@ -380,37 +398,24 @@ class BinanceFundingSensor(CoordinatorEntity, SensorEntity):
 
         self.async_write_ha_state()
         
-class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
+class BinanceSavingsSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, coin, total, fixed, flexible, native = []):
-        super().__init__(coordinator)
-        
         """Initialize the sensor."""
-        self._name = f"{name} {coin} Savings"
         self._coin = coin
         self._total = total
         self._fixed = fixed
         self._flexible = flexible
         self._native = native
         self._unit_of_measurement = coin
-        self._state = None
         self._native_balance = { "total" : {}, "fixed": {}, "flexible": {} }
-
-    @property
-    def unique_id(self):
-        return slugify(text = self._name, separator = '-')
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-
-        return self._state
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {coin} Savings"
+        )        
+        
 
     @property
     def unit_of_measurement(self):
@@ -434,9 +439,9 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
             ATTR_TOTAL: "{:.8f}".format(float(self._total)),
         }
         
-        for type, native in self._native_balance.items():
+        for typ, native in self._native_balance.items():
             for asset, exchange in native.items(): 
-                data[f"Native {type} savings in {asset}"] = exchange
+                data[f"Native {typ} savings in {asset}"] = exchange
          
         return data
 
@@ -469,32 +474,19 @@ class BinanceSavingsSensor(CoordinatorEntity, SensorEntity):
 
         self.async_write_ha_state()
 
-class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
+class BinanceExchangeSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, symbol, price):
-        super().__init__(coordinator)
-                
         """Initialize the sensor."""
-        self._name = f"{name} {symbol} Exchange"
         self._symbol = symbol
         self._price = price
         self._unit_of_measurement = None
-        self._state = None
 
-    @property
-    def unique_id(self):
-        return slugify(text = self._name, separator = '-')
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-        return self._state
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {symbol} Exchange"
+        )
 
     @property
     def unit_of_measurement(self):
@@ -543,14 +535,11 @@ class BinanceExchangeSensor(CoordinatorEntity, SensorEntity):
    
         self.async_write_ha_state()
         
-class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
+class BinanceWorkerSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, account, algorithm, worker, status, hrate, hrate_daily, reject, update):
-        super().__init__(coordinator)        
-        
         """Initialize the sensor."""
-        self._name = f"{name} {account}.{worker} ({algorithm}) worker"
         self._account = account
         self._algorithm = algorithm
         self._worker = worker
@@ -560,25 +549,14 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
         self._reject = reject
         self._update = update
         self._unit_of_measurement = "H/s"        
-        self._state = None
         
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
         self._status_icons = ["mdi:sync-off", "mdi:server-network", "mdi:server-network-off", "mdi:power-plug-off"]
-
-    @property
-    def unique_id(self):
-        return slugify(text = self._name, separator = '-')
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-
-        return self._state
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {account}.{worker} ({algorithm}) worker"
+        )        
 
     @property
     def unit_of_measurement(self):
@@ -591,7 +569,7 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
         
         try:
             return self._status_icons[self._status]
-        except KeyError as e:
+        except KeyError:
             return self._status_icons[0]
 
     @property
@@ -626,11 +604,11 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
             if account != self._account:
                 continue
                 
-            for algo, type in algos.items():
-                if algo != self._algorithm or "workers" not in type:
+            for algo, typ in algos.items():
+                if algo != self._algorithm or "workers" not in typ:
                     continue
                 
-                for worker in type["workers"]:
+                for worker in typ["workers"]:
                     if worker["workerName"] != self._worker:
                         continue
                     
@@ -656,14 +634,11 @@ class BinanceWorkerSensor(CoordinatorEntity, SensorEntity):
           
         self.async_write_ha_state()          
             
-class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
+class BinanceStatusSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, name, account, algorithm, hrate_15min, hrate_day, validNum, invalidNum, unknown, invalid, inactive):
-        super().__init__(coordinator)
-        
         """Initialize the sensor."""
-        self._name = f"{name} {account} ({algorithm}) status"
         self._account = account
         self._algorithm = algorithm
         self._hrate15m = hrate_15min
@@ -674,24 +649,13 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
         self._invalid_workers = invalid
         self._inactive_workers = inactive
         self._unit_of_measurement = "H/s"        
-        self._state = None
 
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
-
-    @property
-    def unique_id(self):
-        return slugify(text = self._name, separator = '-')
-
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-
-        return self._state
+        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {account} ({algorithm}) status"
+        )        
 
     @property
     def unit_of_measurement(self):
@@ -729,23 +693,23 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
             if account != self._account:
                 continue
                 
-            for algo, type in algos.items():
-                if algo != self._algorithm or "status" not in type:
+            for algo, typ in algos.items():
+                if algo != self._algorithm or "status" not in typ:
                     continue
 
                 exists = True
                 
-                self._hrate15m = type["status"].get("fifteenMinHashRate", 0)
-                self._hrate24h = type["status"].get("dayHashRate", 0)
-                self._valid_workers = type["status"]["validNum"]
-                self._total_alerts = type["status"]["invalidNum"]
+                self._hrate15m = typ["status"].get("fifteenMinHashRate", 0)
+                self._hrate24h = typ["status"].get("dayHashRate", 0)
+                self._valid_workers = typ["status"]["validNum"]
+                self._total_alerts = typ["status"]["invalidNum"]
                 
                 self._state = self._hrate15m
                 
                 unknown = invalid = inactive = 0 
                 
-                if "workers" in type:
-                    for worker in type["workers"]:
+                if "workers" in typ:
+                    for worker in typ["workers"]:
                         if worker["status"] == 0:
                             unknown += 1
                         elif worker["status"] == 2:
@@ -768,41 +732,27 @@ class BinanceStatusSensor(CoordinatorEntity, SensorEntity):
           
         self.async_write_ha_state()
                     
-class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
+class BinanceProfitSensor(BinanceSensorEntity):
     """Representation of a Sensor."""
 
     def __init__(self, coordinator, wallet, name, account, algorithm, coin, estimate, earnings, native = []):
-        super().__init__(coordinator)
-        
         """Initialize the sensor."""
-        self._name = f"{name} {account} ({algorithm}) {coin} profit"
         self._account = account
         self._algorithm = algorithm
         self._coin = coin
         self._estimate = estimate
         self._earnings = earnings
         self._unit_of_measurement = f"{coin}"        
-        self._state = None
         self._native = native
         self._native_earnings = {}
         self._native_estimate = {}
         self._wallet = wallet
         
-    @property
-    def unique_id(self):
-        return slugify(text = self._name, separator = '-')        
+        super().__init__(
+            coordinator = coordinator, 
+            name = f"{name} {account} ({algorithm}) {coin} profit"
+        )        
         
-    @property
-    def name(self):
-        """Return the name of the sensor."""
-        return self._name
-
-    @property
-    def state(self):
-        """Return the state of the sensor."""
-
-        return self._state
-
     @property
     def unit_of_measurement(self):
         """Return the unit of measurement this sensor expresses itself in."""
@@ -846,8 +796,8 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
             if account != self._account:
                 continue
                 
-            for algo, type in algos.items():
-                if algo != self._algorithm or "status" not in type:
+            for algo, typ in algos.items():
+                if algo != self._algorithm or "status" not in typ:
                     continue
                 
                 
@@ -857,8 +807,8 @@ class BinanceProfitSensor(CoordinatorEntity, SensorEntity):
                     if coin != self._coin:
                         continue
 
-                    estimate = type["status"].get("profitToday", {})
-                    earnings = type["status"].get("profitYesterday", {})
+                    estimate = typ["status"].get("profitToday", {})
+                    earnings = typ["status"].get("profitYesterday", {})
 
                     old_estimate = self._estimate
                     old_earnings = self._earnings

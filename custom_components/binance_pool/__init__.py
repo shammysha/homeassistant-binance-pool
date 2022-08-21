@@ -5,6 +5,8 @@ from datetime import (
 import logging
 import copy
 
+import homeassistant.helpers.entity_registry as er
+
 from typing import (
     Dict, 
     Final, 
@@ -33,18 +35,10 @@ from homeassistant.exceptions import (
     ConfigEntryAuthFailed
 )
 
-from homeassistant.helpers.discovery import (
-    async_load_platform
-)
-
 from homeassistant.helpers.update_coordinator import (
     CoordinatorEntity, 
     DataUpdateCoordinator, 
     UpdateFailed
-)
-
-from homeassistant.util import (
-    Throttle
 )
 
 from .schemas import (
@@ -64,7 +58,7 @@ from .const import (
     MIN_TIME_BETWEEN_MINING_UPDATES,
     COORDINATOR_MINING,
     COORDINATOR_WALLET,
-    FLOW_VERSION    
+    FLOW_VERSION
 )
 
 from .client import (
@@ -72,9 +66,6 @@ from .client import (
     BinanceAPIException, 
     BinanceRequestException
 )
-
-__version__ = "2.0.17"
-REQUIREMENTS = ["python-binance==1.0.10"]
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -152,6 +143,7 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     
     for r in res:
         if isinstance(r, Exception): 
+            _LOGGER.debug('Exception: %s', str(r))
             await binance_data_wallet.client.close_connection()
             await binance_data_mining.client.close_connection()
             raise r
@@ -214,11 +206,11 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     if hasattr(binance_data_mining, "mining"):
         for account, algos in binance_data_mining.mining.items():
             if not config[CONF_MINING] or account in config[CONF_MINING]:
-                for algo, type in algos.items():
+                for algo, typ in algos.items():
                     unknown = invalid = inactive = 0
                     
-                    if "workers" in type:
-                        for worker in type["workers"]:
+                    if "workers" in typ:
+                        for worker in typ["workers"]:
                             worker["name"] = name
                             worker["algorithm"] = algo
                             worker["account"] = account
@@ -232,8 +224,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                             elif worker["status"] == 3:
                                 inactive += 1    
                             
-                    if "status" in type:
-                        status = copy.deepcopy(type["status"])
+                    if "status" in typ:
+                        status = copy.deepcopy(typ["status"])
                         status["name"] = name
                         status["algorithm"] = algo
                         status["account"] = account
@@ -288,7 +280,9 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
             COORDINATOR_WALLET: binance_data_wallet
         },
         'sensors': sensors
-    }                        
+    }
+    
+    config_entry.async_on_unload(config_entry.add_update_listener(async_reload_entry))
                         
     if sensors:
         hass.async_create_task(
@@ -298,10 +292,31 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
     return True
    
    
+async def async_unload_entry(hass, config_entry: ConfigEntry) -> None:
+    coordinators = hass.data[DOMAIN][config_entry.entry_id]['coordinator'].values()
+    
+    unload_ops = [
+        hass.config_entries.async_forward_entry_unload(config_entry, "sensor")
+    ] + [
+        coordinator.client.close_connection() for coordinator in coordinators
+    ]
+
+    onload_ok = all( [ await gather(*unload_ops) ] )
+    if onload_ok:
+        ent_reg = er.async_get(hass)
+        for entity in er.async_entries_for_config_entry(ent_reg, config_entry.entry_id):
+            if entity.entity_id.startswith('sensor'):
+                ent_reg.async_remove(entity.entity_id)
+    
+        hass.data[DOMAIN].pop(config_entry.entry_id)
+
+    return onload_ok   
+
 async def async_reload_entry(hass, config_entry: ConfigEntry) -> None:
     _LOGGER.info(f"[{config_entry.data[CONF_NAME]}] Reloading configuration entry")
     await hass.config_entries.async_reload(config_entry.entry_id)   
    
+    return True
 
 async def async_migrate_entry(hass, config_entry: ConfigEntry):
     _LOGGER.debug("Migrating from version %s to %s", config_entry.version, FLOW_VERSION)
@@ -352,6 +367,8 @@ class BinanceDataMining(DataUpdateCoordinator):
                 res = await gather(*common_queries, return_exceptions=True)
                 for r in res:
                     if isinstance(r, Exception): 
+                        _LOGGER.debug('Catched Exception: %s', str(r))
+                        
                         await self.client.close_connection()
                         raise r
                                                         
@@ -418,6 +435,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
             res = await gather(*tasks, return_exceptions=True)
             for r in res:
                 if isinstance(r, Exception):
+                    _LOGGER.debug('Catched Exception: %s', str(r))
                     await self.client.close_connection()
                     raise r
                 
