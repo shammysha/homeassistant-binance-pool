@@ -1,4 +1,4 @@
-FLOW_VERSION = 6
+FLOW_VERSION = 7
 
 DOMAIN = "binance_pool"
 
