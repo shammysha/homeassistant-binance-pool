@@ -1,6 +1,9 @@
 """
 Binance sensor
 """
+
+import re
+
 from datetime import (
     datetime
 )
@@ -553,9 +556,11 @@ class BinanceWorkerSensor(BinanceSensorEntity):
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
         self._status_icons = ["mdi:sync-off", "mdi:server-network", "mdi:server-network-off", "mdi:power-plug-off"]
         
+        algo = re.sub('-.*$', '', algorithm)
+        
         super().__init__(
             coordinator = coordinator, 
-            name = f"{name} {account}.{worker} ({algorithm}) worker"
+            name = f"{name} {account}.{worker} ({algo}) worker"
         )        
 
     @property
@@ -652,9 +657,11 @@ class BinanceStatusSensor(BinanceSensorEntity):
 
         self._status_vars = ["unknown", "valid", "invalid", "inactive"]
         
+        algo = re.sub('-.*$', '', algorithm)
+        
         super().__init__(
             coordinator = coordinator, 
-            name = f"{name} {account} ({algorithm}) status"
+            name = f"{name} {account} ({algo}) status"
         )        
 
     @property
@@ -748,9 +755,11 @@ class BinanceProfitSensor(BinanceSensorEntity):
         self._native_estimate = {}
         self._wallet = wallet
         
+        algo = re.sub('-.*$', '', algorithm)
+        
         super().__init__(
             coordinator = coordinator, 
-            name = f"{name} {account} ({algorithm}) {coin} profit"
+            name = f"{name} {account} ({algo}) {coin} profit"
         )        
         
     @property
