@@ -136,4 +136,4 @@ class BinancePoolClient(AsyncClient):
         
             https://binance-docs.github.io/apidocs/spot/en/#simple-account-user_data
         """
-        return await self._request_margin_api('post', 'simple-earn/account', True, data=params)
+        return await self._request_margin_api('get', 'simple-earn/account', True, data=params)
