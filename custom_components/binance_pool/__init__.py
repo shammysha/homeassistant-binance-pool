@@ -428,7 +428,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
             tasks = [
                 self.client.async_get_capital_balances(),
                 self.client.async_get_funding_balances(),
-                self.client.get_lending_account(),
+                self.client.get_simple_earn_account(),
                 self.client.get_all_tickers()
             ]
             
@@ -451,8 +451,6 @@ class BinanceDataWallet(DataUpdateCoordinator):
 
 
             if savings:
-                savings.pop("positionAmountVos", None)
-    
                 self.savings = savings
                 _LOGGER.debug(f"Savings data updated from binance.{self.tld}")
 
