@@ -40,7 +40,11 @@ class BinancePoolClient(AsyncClient):
     async def async_request_mining_api(self, method, path, signed=False, **kwargs):
         uri = self._create_mining_api_url(path)
         
-        answer = await self._request(method, uri, signed, True, **kwargs)
+        try:
+            answer = await self._request(method, uri, signed, True, **kwargs)
+        
+        except BinanceAPIException:
+            raise BinanceAPIException(f'Invalid Response: {answer} /// Incoming( Method: {method}, URI: {uri})')        
         
         if answer["code"] != 0 or "data" not in answer:
             raise BinanceRequestException(f'Invalid Response: {answer}')        
