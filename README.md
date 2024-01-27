@@ -23,8 +23,8 @@ To use this component, add new integration via HomeAssistant GUI or add the foll
 ```yaml
 binance_pool:
   - name: Binance 
-  	api_key: !secret binance_api_key
-  	api_secret: !secret binance_api_secret
+    api_key: !secret binance_api_key
+    api_secret: !secret binance_api_secret
 ```
 
 #### Configuration variables:
