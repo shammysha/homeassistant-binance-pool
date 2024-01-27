@@ -192,8 +192,8 @@ async def async_setup_entry(hass, config_entry: ConfigEntry) -> bool:
                 'native': config[CONF_NATIVE_CURRENCY],
                 'coin': coin,
                 'total': binance_data_wallet.savings[f'totalAmountIn{coin}'],
-                'fixed': binance_data_wallet.savings[f'totalFixedAmountIn{coin}'],
-                'flexible': binance_data_wallet.savings[f'totalFlexibleIn{coin}']
+                'fixed': binance_data_wallet.savings[f'totalLockedIn{coin}'],
+                'flexible': binance_data_wallet.savings[f'totalFlexibleAmountIn{coin}']
             })
 
     if hasattr(binance_data_wallet, "tickers"):
