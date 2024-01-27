@@ -428,7 +428,7 @@ class BinanceDataWallet(DataUpdateCoordinator):
             tasks = [
                 self.client.async_get_capital_balances(),
                 self.client.async_get_funding_balances(),
-                self.client.get_simple_earn_account(),
+                self.client.async_get_simple_earn_account(),
                 self.client.get_all_tickers()
             ]
             
