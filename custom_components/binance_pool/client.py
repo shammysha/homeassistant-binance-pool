@@ -43,8 +43,9 @@ class BinancePoolClient(AsyncClient):
         try:
             answer = await self._request(method, uri, signed, True, **kwargs)
         
-        except BinanceAPIException:
-            raise BinanceAPIException(f'Invalid Response: {answer} /// Incoming( Method: {method}, URI: {uri})')        
+        except BinanceAPIException as ex:
+            raise BinanceAPIException(f'{ex} !!! Incoming( Method: {method}, URI: {uri})')
+                
         
         if answer["code"] != 0 or "data" not in answer:
             raise BinanceRequestException(f'Invalid Response: {answer}')        
@@ -54,7 +55,24 @@ class BinancePoolClient(AsyncClient):
     async def async_request_capital_api(self, method, path, signed=False, **kwargs):
         uri = self._create_capital_api_url(path)
         
-        return await self._request(method, uri, signed, True, **kwargs)
+        try:
+            answer = await self._request(method, uri, signed, True, **kwargs)
+        
+        except BinanceAPIException as ex:
+            raise BinanceAPIException(f'{ex} !!! Incoming( Method: {method}, URI: {uri})')
+                
+        return answer["data"]
+        
+    async def async_request_margin_api(self, method, path, signed=False, **kwargs):
+        uri = self._create_margin_api_uri(path)
+        
+        try:
+            answer = await self._request(method, uri, signed, **kwargs)        
+        
+        except BinanceAPIException as ex:
+            raise BinanceAPIException(f'{ex} !!! Incoming( Method: {method}, URI: {uri})')
+                
+        return answer["data"]        
         
     async def async_get_mining_algolist(self):
         """ Acquiring Algorithm (MARKET_DATA)
@@ -132,7 +150,7 @@ class BinancePoolClient(AsyncClient):
         
             https://binance-docs.github.io/apidocs/spot/en/#funding-wallet-user_data
         """
-        return await self._request_margin_api('get', 'asset/get-funding-asset', True, data=params) 
+        return await self.async_request_margin_api('get', 'asset/get-funding-asset', True, data=params) 
         
 
     async def async_get_simple_earn_account(self, **params):
@@ -140,4 +158,4 @@ class BinancePoolClient(AsyncClient):
         
             https://binance-docs.github.io/apidocs/spot/en/#simple-account-user_data
         """
-        return await self._request_margin_api('get', 'simple-earn/account', True, data=params)
+        return await self.async_request_margin_api('get', 'simple-earn/account', True, data=params)
