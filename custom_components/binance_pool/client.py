@@ -44,7 +44,6 @@ class BinancePoolClient(AsyncClient):
             answer = await self._request(method, uri, signed, True, **kwargs)
         
         except BinanceAPIException as ex:
-            estr = str(ex)
             raise BinanceAPIException(f'{ex} !!! Incoming( Method: {method}, URI: {uri})')
                 
         
@@ -60,7 +59,6 @@ class BinancePoolClient(AsyncClient):
             answer = await self._request(method, uri, signed, True, **kwargs)
         
         except BinanceAPIException as ex:
-            estr = str(ex)
             raise BinanceAPIException(f'{ex} !!! Incoming( Method: {method}, URI: {uri})')
                 
         return answer["data"]
