@@ -4,7 +4,7 @@ from aiohttp import (
     ClientSession
 )
 
-from binance.client import (
+from binance.async_client import (
     AsyncClient
 )
 
