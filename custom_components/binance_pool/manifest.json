@@ -10,6 +10,6 @@
     "@shammysha"
   ],
   "requirements": [
-    "python-binance>=1.0.17"
+    "python-binance>=1.0.25"
   ]
 }
